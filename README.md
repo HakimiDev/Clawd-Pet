@@ -57,6 +57,20 @@ thing is portable: copy the folder, share it, done.
   him with the mouse), catch me (he dodges and jumps over your cursor), guess the number, fetch (he passes
   the ball to your cursor; catch it for a streak) and rock-paper-scissors. The ball bounces on window tops,
   bounces off their sides (a hard throw shoves the window) and bonks him on the head.
+- **Anime mode** (right-click → Anime, or the "Anime fan" personality):
+  - Luffy's gum-gum pistol and gatling: his arm stretches to your cursor and can punch a window away.
+  - Shanks's conqueror's haki: shockwaves, black-red lightning, ゴゴゴ, and every window trembles.
+  - Goku's Super Saiyan power-up: a scream, rising rocks, sparks, then golden hair and an aura that stay for
+    45 seconds and make him faster.
+  - A kamehameha beam aimed at your cursor.
+  - A Death Note page being written, followed by an evil laugh.
+  - Levi's ODM gear: he grapples from window corners and the ceiling, spinning with blade slashes.
+  - Detective mode: big glasses, a bow tie, a magnifying glass and detective music, ending with
+    "There's only one truth! The culprit is...".
+  - In Arabic he'll tell you "ون بيس عمك!".
+- **More music**: three new original anime-style tracks: "Detective Case", "Pirate Adventure" and "Power Up!".
+- **Weather in Arabic**: Arabic descriptions and place names. Place names are resolved properly, so "Riyadh"
+  is no longer South Africa.
 - **Window awareness**: he notices new windows, complains when the window he stands on disappears, rides
   moving windows, and won't kick the window you're typing in.
 - **Fun**: jokes, compliments, motivation, backflips, sneezes, moonwalks, peekaboo,

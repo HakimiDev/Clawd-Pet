@@ -54,7 +54,7 @@ try:
 except Exception:
     pygame = None
 
-APP, VERSION = "Clawd", "1.2.0"
+APP, VERSION = "Clawd", "1.3.0"
 ORANGE, BLACK, KEY, CREAM = "#D97757", "#141414", "#ff00fe", "#F4EFE8"
 HOME = os.path.expanduser("~")
 FROZEN = getattr(sys, "frozen", False)
@@ -121,7 +121,9 @@ PERSONAS = {  # multipliers used when he decides what to do next
     "lazy": dict(speed=.7, naughty=.5, lazy=3.0, social=.8),
     "hyper": dict(speed=1.5, naughty=1.6, lazy=.3, social=1.5),
     "sweet": dict(speed=.95, naughty=.3, lazy=1.0, social=2.4),
+    "anime": dict(speed=1.2, naughty=1.3, lazy=.7, social=1.3),
 }
+ANIME = ("luffy", "shanks", "goku", "kame", "deathnote", "levi", "detective")
 PERSONA_DESC = {
     "balanced": "",
     "naughty": "The user set your personality to NAUGHTY: a mischievous prankster - you tease, plot harmless pranks, "
@@ -130,6 +132,9 @@ PERSONA_DESC = {
             "correctly. ",
     "hyper": "The user set your personality to HYPER: SUPER excited, energetic, fast-talking, lots of exclamation marks. ",
     "sweet": "The user set your personality to SWEET: extra kind, caring and encouraging, gives little compliments. ",
+    "anime": "The user set your personality to ANIME FAN (otaku): dramatic anime reactions and references (One Piece, "
+             "Dragon Ball, Naruto, Attack on Titan, Death Note, Detective Conan), and you love doing anime moves "
+             "(use the anime action). In Arabic you proudly say things like 'ون بيس عمك!'. ",
 }
 DOODLES = (["Clawd was here", "hi {n}!", "<3", "ship it!", "I \u2665 cookies", "{n} rocks!", "404: bug not found", "LGTM \u2713"],
            ["\u0643\u0644\u0648\u062f \u0645\u0631\u0651 \u0645\u0646 \u0647\u0646\u0627", "\u0623\u0647\u0644\u0627\u064b {n}!", "<3", "\u0627\u0646\u0634\u0631\u0647\u0627!", "\u0623\u062d\u0628 \u0627\u0644\u0643\u0639\u0643 \u2665", "{n} \u0623\u0633\u0637\u0648\u0631\u0629!", "\u062e\u0637\u0623 404"])
@@ -213,11 +218,21 @@ T = {
     "memory_lbl": ("Memories about you: {n}", "ذكريات عنك: {n}"), "forget_all": ("Forget all", "انسَ الكل"),
     "hungry_lbl": ("hunger {g}%", "الجوع {g}%"),
     "tracks": (("Clawd Groove", "Pixel Party", "Lo-fi Nap", "Desert Dreams", "Synthwave Drive", "Boss Battle",
-                "Happy Hop", "Workout Pump", "Lullaby"),
+                "Happy Hop", "Workout Pump", "Lullaby", "Detective Case", "Pirate Adventure", "Power Up!"),
                ("إيقاع كلود", "حفلة البكسل", "قيلولة هادئة", "أحلام الصحراء", "رحلة سينث", "معركة الزعيم",
-                "قفزة سعيدة", "حماس التمرين", "تهويدة")),
+                "قفزة سعيدة", "حماس التمرين", "تهويدة", "قضية غامضة", "مغامرة القراصنة", "تحوّل القوة")),
     "persona_lbl": ("Personality", "الشخصية"),
-    "personas": (("Balanced", "Naughty", "Lazy", "Hyper", "Sweet"), ("متوازن", "مشاغب", "كسول", "نشيط جداً", "حنون")),
+    "personas": (("Balanced", "Naughty", "Lazy", "Hyper", "Sweet", "Anime fan"),
+                 ("متوازن", "مشاغب", "كسول", "نشيط جداً", "حنون", "أوتاكو (أنمي)")),
+    "anime": ("Anime", "أنمي"),
+    "an_luffy": ("Luffy: Gum-Gum Pistol!", "لوفي: غومو غومو بيستول!"),
+    "an_shanks": ("Shanks: Conqueror's Haki", "شانكس: هاكي الملوك"),
+    "an_goku": ("Goku: go Super Saiyan", "غوكو: تحوّل سوبر ساياين"),
+    "an_kame": ("Kamehameha!", "كاميهاميها!"),
+    "an_deathnote": ("Death Note", "مذكرة الموت"),
+    "an_levi": ("Levi: ODM gear", "ليفاي: معدات المناورة"),
+    "an_detective": ("Detective mode (Conan)", "وضع المحقق (كونان)"),
+    "an_mode": ("Anime fan personality", "شخصية الأوتاكو"),
     "mischief_lbl": ("Mischief: he may kick and shove my windows", "مشاغبة: يقدر يركل ويحرك نوافذي"),
     "deskfx_lbl": ("Desktop effects (footprints, cracks, confetti, doodles)", "تأثيرات سطح المكتب (آثار أقدام، شقوق، قصاصات، رسومات)"),
     "mischief": ("Mischief & effects", "مشاغبة وتأثيرات"),
@@ -473,6 +488,28 @@ L = {  # random lines (English, Arabic)
                 ["يلااااا!", "أكلت 47 كعكة!", "ما أوقف!", "أسرع! أسرع!"]),
     "sweet_q": (["You're doing great{c}.", "I'm proud of you{c}.", "Hug? *hugs cursor*", "Don't forget to smile today."],
                 ["أنت رائع{c}.", "فخور فيك{c}.", "حضن؟ *يحضن الماوس*", "لا تنسى تبتسم اليوم."]),
+    "anime_q": (["Believe it!", "I'm gonna be King of the Pirates!", "Plus Ultra!", "Nani?!", "It's over 9000!",
+                 "The One Piece is REAL!"],
+                ["ون بيس عمك!", "راح أصير ملك القراصنة!", "صدّقها!", "ناني؟!", "قوتي فوق 9000!", "أنا هوكاغي المستقبل!",
+                 "ون بيس عمك ولا نقاش!"]),
+    "one_piece": (["THE ONE PIECE IS REAL!", "One Piece is the GOAT. Fight me."], ["ون بيس عمك!", "ون بيس عمك ولا نقاش!"]),
+    "gomu": (["Gomu Gomu no...", "Gum-Gum..."], ["غومو غومو نو...", "مطاط مطاط..."]),
+    "pistol": (["PISTOL!"], ["بيستول!"]), "gatling": (["GATLING!"], ["غاتلينغ!"]),
+    "haki": (["Conqueror's Haki!", "*everyone faints*"], ["هاكي الملوك!", "*الكل أغمي عليه*"]),
+    "haki_after": (["Sorry. Got carried away.", "That's the will of a king."], ["آسف، تحمست شوي.", "هذي إرادة الملوك."]),
+    "charge": (["HAAAAAAA!", "AAAAARGH!"], ["هااااااا!", "آآآآآآآآ!"]),
+    "ssj": (["SUPER SAIYAN!", "This isn't even my final form."], ["سوبر ساياين!", "وهذا مو حتى شكلي النهائي."]),
+    "dn_open": (["*opens a black notebook*"], ["*يفتح دفتر أسود*"]),
+    "dn_plan": (["Just as planned.", "I am justice!"], ["كل شيء حسب الخطة.", "أنا العدالة!"]),
+    "dn_done": (["Cause of death: heart attack.", "Deleted. Permanently."], ["سبب الوفاة: نوبة قلبية.", "انحذف. للأبد."]),
+    "dn_victims": (["Bugs in my code", "Windows Update", "Monday", "Merge conflicts", "Slow Wi-Fi", "Homework"],
+                   ["الأخطاء البرمجية", "تحديثات ويندوز", "يوم الأحد", "تعارضات الدمج", "النت البطيء", "الواجبات"]),
+    "levi_go": (["Dedicate your hearts!", "Titans spotted."], ["قدّموا قلوبكم!", "رصدت عمالقة."]),
+    "levi_end": (["Tch.", "Tch. Your screen is filthy."], ["تشه.", "تشه. شاشتك وسخة."]),
+    "det_clue": (["A clue!", "Interesting..."], ["دليل!", "مثير للاهتمام..."]),
+    "det_reveal": (["There's only one truth! The culprit is... {x}!"], ["الحقيقة دائماً واحدة! الفاعل هو... {x}!"]),
+    "det_x": (["the missing semicolon", "Windows Update", "you", "the cat on the keyboard", "an off-by-one error"],
+              ["الفاصلة المنقوطة الناقصة", "تحديثات ويندوز", "أنت", "القطة على الكيبورد", "خطأ بفرق واحد"]),
     "remembered": (["Got it, I'll remember that!"], ["تمام، سأتذكر هذا!"]),
     "forgot": (["Okay, forgotten. *pixel amnesia*"], ["تمام، نسيت. *فقدان ذاكرة بكسلي*"]),
     "typing": (["You type fast! Let me code too.", "Keyboard warrior! I'll help."], ["تكتب بسرعة! خليني أبرمج معك.", "محارب الكيبورد! سأساعدك."]),
@@ -841,6 +878,7 @@ SFX = {
     "laugh": ([(660, .06), (0, .03), (620, .06), (0, .03), (580, .06), (0, .03), (540, .1)], "square", .14),
     "clink": ([((1500, 1100), .04), ("noise", .015)], "sine", .4), "poof": ([("noise", .12)], "square", .1),
     "static": ([("noise", .35)], "square", .05), "boom": ([((120, 40), .22), ("noise", .06)], "sine", .7),
+    "charge": ([((110, 520), 1.3)], "square", .07), "haki": ([((90, 35), .9), ("noise", .25)], "sine", .75),
 }
 SCALES = {"major": [0, 2, 4, 5, 7, 9, 11], "minor": [0, 2, 3, 5, 7, 8, 10], "hijaz": [0, 1, 4, 5, 7, 8, 10]}
 # same order as T["tracks"]: bpm, root (midi), scale, chord degrees (one per bar), style, seed
@@ -854,6 +892,9 @@ TRACKS = [
     (124, 60, "major", [0, 3, 4, 3], "hop", 17),
     (128, 55, "minor", [0, 5, 6, 4], "workout", 23),
     (66, 65, "major", [0, 3, 0, 4], "lullaby", 2),
+    (96, 57, "minor", [0, 3, 4, 0], "detective", 31),
+    (132, 62, "major", [0, 3, 4, 0], "pirate", 41),
+    (156, 52, "minor", [0, 5, 6, 4], "shonen", 47),
 ]
 DRUMS = {  # 16 steps per bar: kick, snare/clap, hat (D/T = darbuka doum/tak)
     "pop": ("x.....x.x.......", "....x.......x...", "x.x.x.x.x.x.x.x."),
@@ -865,6 +906,9 @@ DRUMS = {  # 16 steps per bar: kick, snare/clap, hat (D/T = darbuka doum/tak)
     "hop": ("x..x..x...x.x...", "....x.......x...", "x.xxx.xxx.xxx.xx"),
     "workout": ("x...x...x...x...", "....x.......x...", "..x...x...x...x."),
     "lullaby": ("................", "................", "................"),
+    "detective": ("x.....x...x.....", "....x.......x...", "x..x..x..x..x..x"),
+    "pirate": ("x.......x.......", "....x.......x...", "..x...x...x...x."),
+    "shonen": ("x.x...x.x.x...x.", "....x.......x...", "x.x.x.x.x.x.x.x."),
 }
 TN = 2048
 WT = {"sin": [math.sin(2 * math.pi * i / TN) for i in range(TN)],
@@ -909,7 +953,7 @@ def synth_track(path, bpm, root, scale, degs, style, seed):
     buf = array("f", bytes(4 * n))
     add = operator.add
     hz = lambda m: 440 * 2 ** ((m - 69) / 12)
-    swing = .33 if style in ("lofi", "hop") else 0
+    swing = .33 if style in ("lofi", "hop") else .22 if style == "detective" else 0
 
     def t_of(step):  # step index (16ths) -> seconds, with swing on off-16ths
         return step * st + (st * swing if step % 2 else 0)
@@ -964,19 +1008,20 @@ def synth_track(path, bpm, root, scale, degs, style, seed):
         out[15] = None
         return out
 
-    dens = {"lofi": .5, "lullaby": .55, "desert": .7, "boss": .85, "party": .75}.get(style, .65)
+    dens = {"lofi": .5, "lullaby": .55, "desert": .7, "boss": .85, "party": .75, "detective": .55, "pirate": .8,
+            "shonen": .8}.get(style, .65)
     ma, mb = motif(dens), motif(dens)
     mb = [m + 2 if isinstance(m, int) else m for m in mb]
     ma2 = ma[:12] + [rnd.choice((0, 4, 7)), "-", "-", None]
     form = [ma, ma2, None, ma, mb, mb, ma, ma2] if style != "lullaby" else [ma, ma2, mb, ma2] * 2
     lead = {"pop": ("pulse", .13), "party": ("sq", .1), "lofi": ("sin", .17), "desert": ("tri", .2),
             "synthwave": ("saw", .08), "boss": ("sq", .1), "hop": ("pulse", .12), "workout": ("saw", .08),
-            "lullaby": ("box", .2)}[style]
+            "lullaby": ("box", .2), "detective": ("saw", .075), "pirate": ("organ", .15), "shonen": ("sq", .1)}[style]
     drums = DRUMS[style]
 
     for bar in range(bars):
         d = degs[bar % len(degs)]
-        ch = chord_tones(d, 4 if style in ("lofi", "synthwave", "lullaby") else 3)
+        ch = chord_tones(d, 4 if style in ("lofi", "synthwave", "lullaby", "detective") else 3)
         bass = ch[0] - 12 if ch[0] - 12 >= 36 else ch[0]
         b0 = bar * 16
         # drums
@@ -998,14 +1043,20 @@ def synth_track(path, bpm, root, scale, degs, style, seed):
                     noise(t, .035 if style != "boss" else .025, .07 if style != "lofi" else .045, True)
                 if style == "workout" and s_ in (4, 12) and bar % 2:
                     noise(t + .012, .1, .2)   # clap
-            if bar % 4 == 3 and style in ("pop", "party", "boss", "workout", "synthwave"):
+            if bar % 4 == 3 and style in ("pop", "party", "boss", "workout", "synthwave", "shonen"):
                 for s_ in (12, 13, 14, 15):  # fill
                     noise(t_of(b0 + s_), .06, .18)
         # bass
         if style in ("party", "workout"):
             for s_ in range(2, 16, 4):
                 tone(t_of(b0 + s_), st * 1.8, hz(bass + (12 if s_ % 8 == 6 else 0)), "saw", .2)
-        elif style in ("synthwave", "boss"):
+        elif style == "detective":   # walking bass
+            for i, s_ in enumerate((0, 4, 8, 12)):
+                tone(t_of(b0 + s_), st * 3.4, hz(note(d + (0, 2, 4, 5)[i]) - 12), "tri", .3)
+        elif style == "pirate":   # oom-pah
+            for s_, o in ((0, 0), (4, 7), (8, 0), (12, 7)):
+                tone(t_of(b0 + s_), st * 2.5, hz(bass + o), "tri", .3)
+        elif style in ("synthwave", "boss", "shonen"):
             for s_ in range(0, 16, 2):
                 tone(t_of(b0 + s_), st * 1.9, hz(bass + (12 if style == "boss" and s_ % 8 == 6 else 0)),
                      "saw" if style == "synthwave" else "sq", .17)
@@ -1030,6 +1081,17 @@ def synth_track(path, bpm, root, scale, degs, style, seed):
                 tone(t_of(b0), st * 16, hz(m), "saw", .025, "pad")
             for s_ in range(16):
                 tone(t_of(b0 + s_), st * .9, hz(ch[s_ % 4] + 12), "tri", .05)
+        elif style == "detective":   # jazzy stabs
+            for s_ in (6, 14):
+                for m in ch:
+                    tone(t_of(b0 + s_), st * 1.2, hz(m), "organ", .035)
+        elif style == "pirate":
+            for s_ in (2, 6, 10, 14):
+                for m in ch:
+                    tone(t_of(b0 + s_), st * 1.1, hz(m + 12), "box", .03)
+        elif style == "shonen":   # power chords
+            for m in (ch[0], ch[0] + 7, ch[0] + 12):
+                tone(t_of(b0), st * 15, hz(m), "sq", .025, "pad")
         elif style in ("party", "boss"):
             for s_ in range(16):
                 tone(t_of(b0 + s_), st * .8, hz(ch[(s_ * (1 if style == "party" else 2)) % 3] + 12), "pulse", .035)
@@ -1062,10 +1124,10 @@ def synth_track(path, bpm, root, scale, degs, style, seed):
                     dur -= st * .5
                 tone(t, dur, hz(pitch), lead[0], lead[1], "organ", vib=.6)
             else:
-                tone(t, dur, hz(pitch), lead[0], lead[1], "pad" if style in ("lofi", "synthwave") else "pluck",
-                     vib=.3 if style in ("lofi", "synthwave") and ln > 2 else 0)
+                tone(t, dur, hz(pitch), lead[0], lead[1], "pad" if style in ("lofi", "synthwave", "detective") else "pluck",
+                     vib=.45 if style == "detective" else .3 if style in ("lofi", "synthwave") and ln > 2 else 0)
     # echo / room
-    if style in ("lofi", "synthwave", "desert", "lullaby"):
+    if style in ("lofi", "synthwave", "desert", "lullaby", "detective"):
         d_ = int(beat * .75 * RATE)
         fb = .28
         for i in range(d_, n, d_):
@@ -1386,11 +1448,73 @@ def fetch_text(url, limit=7000):
     return ((html_text(t.group(1)) + "\n") if t else "") + body[:limit]
 
 
-def weather(place=""):
-    data = json.loads(http_get("https://wttr.in/" + urllib.parse.quote(place.strip()) + "?format=j1", timeout=12))
+WEATHER_AR = {113: "صافٍ ومشمس", 116: "غائم جزئياً", 119: "غائم", 122: "ملبّد بالغيوم", 143: "ضباب خفيف", 248: "ضباب",
+              260: "ضباب متجمد", 176: "احتمال زخات مطر", 263: "رذاذ خفيف", 266: "رذاذ", 293: "مطر خفيف", 296: "مطر خفيف",
+              299: "مطر متوسط", 302: "مطر متوسط", 305: "مطر غزير", 308: "مطر غزير جداً", 353: "زخات مطر خفيفة",
+              356: "زخات مطر", 359: "زخات مطر غزيرة", 179: "احتمال ثلج", 227: "ثلج متطاير", 230: "عاصفة ثلجية",
+              323: "ثلج خفيف", 326: "ثلج خفيف", 329: "ثلج", 332: "ثلج", 335: "ثلج كثيف", 338: "ثلج كثيف",
+              200: "احتمال عواصف رعدية", 386: "مطر مع رعد", 389: "مطر غزير مع رعد", 392: "ثلج مع رعد",
+              395: "ثلج كثيف مع رعد", 182: "مطر متجمد", 185: "رذاذ متجمد", 281: "رذاذ متجمد", 284: "رذاذ متجمد كثيف",
+              311: "مطر متجمد", 314: "مطر متجمد", 317: "مطر وثلج", 320: "مطر وثلج", 350: "حبيبات جليد",
+              362: "زخات مطر وثلج", 365: "زخات مطر وثلج", 368: "زخات ثلج", 371: "زخات ثلج كثيفة", 374: "زخات جليد",
+              377: "زخات جليد"}
+COUNTRY_AR = {"Saudi Arabia": "السعودية", "United Arab Emirates": "الإمارات", "Egypt": "مصر", "Jordan": "الأردن",
+              "Kuwait": "الكويت", "Qatar": "قطر", "Bahrain": "البحرين", "Oman": "عُمان", "Yemen": "اليمن", "Iraq": "العراق",
+              "Syria": "سوريا", "Lebanon": "لبنان", "Palestine": "فلسطين", "Palestinian Territory": "فلسطين",
+              "Morocco": "المغرب", "Algeria": "الجزائر", "Tunisia": "تونس", "Libya": "ليبيا", "Sudan": "السودان",
+              "Turkey": "تركيا", "United States of America": "أمريكا", "United Kingdom": "بريطانيا", "France": "فرنسا",
+              "Germany": "ألمانيا", "Japan": "اليابان", "Malaysia": "ماليزيا", "Indonesia": "إندونيسيا", "Pakistan": "باكستان",
+              "India": "الهند", "Canada": "كندا", "Spain": "إسبانيا", "Italy": "إيطاليا", "Mauritania": "موريتانيا",
+              "Somalia": "الصومال", "Djibouti": "جيبوتي", "Comoros": "جزر القمر", "Netherlands": "هولندا", "Sweden": "السويد"}
+
+
+DESC_AR = (("severe sandstorm", "عاصفة رملية شديدة"), ("sandstorm", "عاصفة رملية"), ("dust", "غبار"), ("haze", "عجاج"),
+           ("smoke", "دخان"), ("partly", "غائم جزئياً"), ("overcast", "ملبّد بالغيوم"), ("cloudy", "غائم"),
+           ("thunder", "عواصف رعدية"), ("heavy rain", "مطر غزير"), ("drizzle", "رذاذ"), ("rain", "مطر"), ("sleet", "مطر وثلج"),
+           ("snow", "ثلج"), ("hail", "برَد"), ("mist", "ضباب خفيف"), ("fog", "ضباب"), ("sunny", "مشمس"), ("clear", "صافٍ"))
+
+
+def geocode(place, lang="en"):
+    """Place name (Arabic or English) -> best match with lat/lon and a localized name (Open-Meteo, no key)."""
+    url = ("https://geocoding-api.open-meteo.com/v1/search?count=1&language=" + ("ar" if lang == "ar" else "en") +
+           "&name=" + urllib.parse.quote(place.strip()))
+    res = json.loads(http_get(url, timeout=10)).get("results") or []
+    return res[0] if res else None
+
+
+def weather(place="", lang="en"):
+    q, where = place.strip(), None
+    if q:   # wttr.in's own geocoder gets plain names wrong ("Riyadh" -> South Africa), so resolve it first
+        try:
+            g = geocode(q, lang)
+            if g:
+                q = f"{g['latitude']:.3f},{g['longitude']:.3f}"
+                where = ("، " if lang == "ar" else ", ").join(x for x in (g.get("name"), g.get("country")) if x)
+        except Exception:
+            pass
+    url = "https://wttr.in/" + urllib.parse.quote(q) + "?format=j1" + ("&lang=ar" if lang == "ar" else "")
+    data = json.loads(http_get(url, timeout=12))
     cur = data["current_condition"][0]
     area = data.get("nearest_area", [{}])[0]
-    where = ", ".join(x[0]["value"] for x in (area.get("areaName"), area.get("country")) if x) or place
+    where = where or ", ".join(x[0]["value"] for x in (area.get("areaName"), area.get("country")) if x) or place
+    if lang == "ar":   # Arabic description (by weather code) and place name
+        try:
+            code = int(cur.get("weatherCode") or 0)
+        except ValueError:
+            code = 0
+        desc = WEATHER_AR.get(code) or (cur.get("lang_ar") or [{}])[0].get("value", "").strip("‏ ")
+        if not desc or not is_ar(desc):
+            low = cur["weatherDesc"][0]["value"].lower()
+            desc = next((ar for en, ar in DESC_AR if en in low), cur["weatherDesc"][0]["value"])
+        cur = dict(cur, weatherDesc=[{"value": desc}])
+        if is_ar(where):
+            pass
+        elif place.strip() and is_ar(place):
+            where = place.strip()
+        else:
+            city = (area.get("areaName") or [{}])[0].get("value", "")
+            country = (area.get("country") or [{}])[0].get("value", "")
+            where = "، ".join(x for x in (city, COUNTRY_AR.get(country, country)) if x) or place
     days = data.get("weather", [])
     fc = "; ".join(f"{d['date']}: {d['mintempC']}-{d['maxtempC']}C" for d in days[:3])
     return dict(where=where, temp=cur["temp_C"], feels=cur["FeelsLikeC"], desc=cur["weatherDesc"][0]["value"],
@@ -1517,6 +1641,8 @@ class Clawd:
         self.last_kick_t, self.fetch_n = -9.0, 0
         self.next_foot, self.foot_i = 0.0, 0
         self.fxl = None
+        self.anime = self.odm = None
+        self.ssj_until = 0.0
         today = time.strftime("%Y-%m-%d")
         if self.cfg["stats"].get("day") != today:
             self.cfg["stats"] = {"day": today, **{k: 0 for k in ("pets", "cookies", "throws", "workouts", "chats", "jokes")},
@@ -1779,10 +1905,10 @@ class Clawd:
            "peek": (4, 7), "fly": (6, 14), "web": (60, 60), "moonwalk": (4, 4), "getup": (1.1, 1.1),
            "slide": (6, 6), "wave": (1.6, 1.6), "look": (2.5, 4), "beg": (3, 3), "yawn": (1.6, 1.6), "proud": (2, 2),
            "hide": (9, 16), "laugh": (1.8, 1.8), "stomp": (2.4, 2.4), "laser": (2.6, 2.6), "doodle": (3.6, 3.6),
-           "lounge": (8, 15), "flee": (30, 30), "build": (7, 7), "mine": (7, 7), "smash": (3.4, 3.4)}
+           "lounge": (8, 15), "flee": (30, 30), "build": (7, 7), "mine": (7, 7), "smash": (3.4, 3.4), "anime": (5, 5)}
     NEED_FLOOR = ("chase", "play", "peek", "moonwalk", "slide", "flee", "lounge", "build", "mine", "smash", "doodle")
     NO_FLY = ("walk", "sleep", "chase", "play", "peek", "moonwalk", "slide", "getup", "flee", "lounge", "build", "mine",
-              "smash", "doodle", "hide", "stomp")
+              "smash", "doodle", "hide", "stomp", "anime")
 
     def set_state(self, s, timer=None):
         if self.state == "hide" and s != "hide":
@@ -1793,6 +1919,8 @@ class Clawd:
             self.work = None
         if s != "walk":
             self.goto = None
+        if self.state == "anime" and s != "anime":
+            self.anime = None
         if self.state == "ask" and s != "ask" and self.ask_req:
             if self.ask_req.get("real"):
                 self.ask_req["deny"]()
@@ -1960,6 +2088,7 @@ class Clawd:
             w[key] *= f
         w["lounge"] = .7 * p["lazy"]
         w["wave"] = .3 * p["social"]
+        w["anime"] = 4.0 if self.cfg.get("personality") == "anime" else .35
         if self.cfg["desk_fx"]:
             w.update(doodle=.5 * p["naughty"] ** .5, laser=.3 * p["naughty"], build=.6 * p["speed"], mine=.6 * p["speed"],
                      smash=.15 * p["naughty"], glitch=.12 * p["naughty"])
@@ -1981,6 +2110,8 @@ class Clawd:
             self.go_hide()
         elif s in ("laser", "doodle", "build", "mine", "smash", "glitch"):
             self.start_trick(s)
+        elif s == "anime":
+            self.start_anime(random.choice(ANIME))
         elif s == "quip":
             self.set_state("idle")
             self.quip()
@@ -2308,6 +2439,7 @@ class Clawd:
             self.after_land = self.chain = None
             self.ex, self.routine = None, []
             self.hide_info = self.kick = self.goto = self.work = None
+            self.anime = self.odm = None
             self.sink = 0.0
             if self.game and self.game.get("kind") in ("tag", "seek"):
                 self.game_won_by_user()
@@ -2519,7 +2651,10 @@ class Clawd:
             'desktop mischief and effects: kick a window across the screen, hide behind a window, laser eyes, doodle on '
             'the screen, fake screen crack + tape, glitch, build a little brick tower, mine for treasure, confetti\n'
             '{"type":"game","name":"tictactoe|hide_seek|tag|guess|fetch|rps"} - play a game with the user\n'
-            '{"type":"personality","name":"balanced|naughty|lazy|hyper|sweet"} - only when the user asks\n\n'
+            '{"type":"anime","name":"luffy|shanks|goku|kame|deathnote|levi|detective"} - anime moves: Luffy gum-gum '
+            'pistol, Shanks conqueror haki (screen trembles), Goku super saiyan, kamehameha beam, Death Note, Levi ODM '
+            'gear, Detective Conan mode (with detective music)\n'
+            '{"type":"personality","name":"balanced|naughty|lazy|hyper|sweet|anime"} - only when the user asks\n\n'
             f"Context: {self.context_str()}.")
 
     def handle_text(self, text):
@@ -2853,6 +2988,8 @@ class Clawd:
                 fn()
         elif t == "personality":
             self.set_persona(a.get("name"))
+        elif t == "anime":
+            self.start_anime(a.get("name"), user=True)
 
     # ---------- small features used by commands / menu
     def feed(self):
@@ -2895,7 +3032,7 @@ class Clawd:
 
         def work():
             try:
-                w = weather(place)
+                w = weather(place, self.lang)
             except Exception:
                 w = None
             self.q.put(("call", lambda: show(w)))
@@ -2905,7 +3042,8 @@ class Clawd:
             if not w:
                 return self.say(self.line("weather_fail"))
             if self.lang == "ar":
-                msg = f"{w['where']}: {w['temp']}°م، {w['desc']}. الإحساس {w['feels']}°، اليوم {w['min']} - {w['max']}°."
+                msg = (f"الطقس في {w['where']}: {w['temp']}° ({w['desc']})، الإحساس {w['feels']}°. "
+                       f"العظمى اليوم {w['max']}° والصغرى {w['min']}°، الرطوبة {w['hum']}٪ والرياح {w['wind']} كم/س.")
             else:
                 msg = f"{w['where']}: {w['temp']}°C, {w['desc'].strip().lower()}. Feels like {w['feels']}°C, today {w['min']}-{w['max']}°C."
             t = int(w["temp"]) if str(w["temp"]).lstrip("-").isdigit() else 20
@@ -3178,6 +3316,21 @@ class Clawd:
             return "", [{"type": "game", "name": "fetch"}]
         if re.fullmatch(r"games|(let'?s )?play a game|العاب|ألعاب|نلعب لعبة|العب معي|وش الالعاب", low):
             return self.line("games_list"), []
+        if re.fullmatch(r"one ?piece|ون ?بيس|ون بيس عمك|ونبيس", low):
+            return self.line("one_piece"), [{"type": "anime", "name": "luffy"}]
+        animes = {"luffy": r"gomu ?gomu|luffy|pistol|gear ?(5|five|second|2)|لوفي|غومو غومو|مطاطي|جير فايف|جير 5",
+                  "shanks": r"shanks|haki|conqueror'?s haki|haoshoku|شانكس|هاكي( الملوك| ملكي)?|هاكي ملوك",
+                  "goku": r"goku|super ?saiyan|ssj|power ?up|غوكو|قوكو|سوبر ساياين|سوبر سايان|تحول|اتحول",
+                  "kame": r"kamehameha|kame ?hame ?ha|كاميهاميها|كاميها",
+                  "deathnote": r"death ?note|kira|مذكرة الموت|مذكره الموت|ديث نوت|كيرا",
+                  "levi": r"levi|odm( gear)?|3d maneuver( gear)?|attack on titan|ليفاي|ليفاي اكرمان|معدات المناورة|هجوم العمالقة",
+                  "detective": r"(detective|conan|sherlock)( mode)?|كونان|المحقق|محقق|وضع المحقق|شيرلوك|المحقق كونان",
+                  "random": r"anime|do anime|انمي|أنمي|حركة انمي"}
+        for name, rx in animes.items():
+            if re.fullmatch(rx, low):
+                return "", [{"type": "anime", "name": name}]
+        if re.fullmatch(r"anime mode|otaku( mode)?|be (an )?otaku|وضع (ال)?انمي|وضع (ال)?أنمي|كن اوتاكو|اوتاكو|أوتاكو", low):
+            return "", [{"type": "personality", "name": "anime"}]
         pranks = {"kick_window": r"kick( a| the| that)?( window)?|اركل( ال)?نافذة|اركل|اضرب النافذة|شوت",
                   "hide": r"hide( behind a window)?|go hide|تخبى|تخبا|تخبأ|اختبئ|استخبى|تخبى ورا النافذة",
                   "laser": r"laser( eyes)?|pew pew|ليزر|عيون ليزر", "doodle": r"draw( something| on the screen)?|doodle|ارسم( شي| شيء| على الشاشة)?",
@@ -3578,7 +3731,7 @@ class Clawd:
         self.update_ball(dt)
         self.step_windows(dt)
         if self.fxl:
-            if self.state != "laser":
+            if self.state not in ("laser", "odm"):
                 self.fxl.beam = None
             self.fxl.step(dt)
 
@@ -3653,6 +3806,8 @@ class Clawd:
         fwd = self.dir * (1 if self.dsurf in ("floor", "lwall") else -1)   # local "forward" sign
         # mouse resting on him -> he stops and looks at you (easy to click / right-click)
         frozen = self.time < self.hover_until and s in ("walk", "play", "moonwalk", "fly", "hang", "look")
+        if s == "odm":
+            return self.odm_step(dt, mx, my, pose)
 
         # ---------- flying with the propeller hat
         if self.surf == "fly" and s != "drag":
@@ -3846,7 +4001,8 @@ class Clawd:
         moving = s in ("walk", "chase", "play", "flee") and self.surf != "fly" and not frozen
         target = 0.0
         if s == "walk":
-            target = (60 if self.surf != "floor" else 75) * k * max(.7, self.cfg["scale"]) * self.persona()["speed"]
+            target = (60 if self.surf != "floor" else 75) * k * max(.7, self.cfg["scale"]) * self.persona()["speed"] \
+                * (1.4 if self.time < self.ssj_until else 1)
         elif s in ("chase", "play"):
             target = 150 * k * max(.7, self.cfg["scale"]) * max(1, self.persona()["speed"])
         elif s == "flee" and self.surf == "floor":
@@ -4083,6 +4239,8 @@ class Clawd:
                 self.sayl("tag_win")
         elif s == "hide":
             self.hide_step(dt, mx, my, pose)
+        elif s == "anime":
+            self.anime_step(dt, mx, my, pose)
         elif s == "peek":
             L_, _, R_, _ = self.mon
             hidden = self.timer > .7
@@ -4335,6 +4493,8 @@ class Clawd:
         self.save()
         name = T["personas"][1 if self.lang == "ar" else 0][list(PERSONAS).index(key)]
         self.say(self.line("persona_set", p=name))
+        if key == "anime":
+            return self.start_anime("luffy")
         act = {"naughty": "laugh", "lazy": "lounge", "hyper": "dance", "sweet": "wave"}.get(key, "proud")
         self.set_state(act, None if act in ("laugh", "lounge", "wave") else 3)
 
@@ -4762,6 +4922,283 @@ class Clawd:
         if self.timer - dt <= 0:
             self.fxl.beam = None
 
+    # ---------------------------------------------------------- v1.3: anime mode
+    def start_anime(self, kind, user=False):
+        if user:
+            self.stay = False
+        if kind not in ANIME:
+            kind = random.choice(ANIME)
+        if kind == "levi":
+            return self.start_odm()
+        if self.surf != "floor":
+            return self.need_floor(lambda: self.start_anime(kind, user))
+        dur = {"luffy": 3.4, "shanks": 4.6, "goku": 5.2, "kame": 5.0, "deathnote": 7.5, "detective": 8.0}[kind]
+        self.set_state("anime", dur)
+        if self.state != "anime":
+            return
+        mx = self.root.winfo_pointerx()
+        self.anime = {"kind": kind, "t": 0.0, "done": set(), "side": 1 if mx >= self.fx else -1}
+        L_, _, R_, _ = self.mon
+        if kind == "detective":   # walks while investigating: head for the roomier side
+            self.anime["side"] = 1 if R_ - self.fx > self.fx - L_ else -1
+            self.word = random.choice(("أحقق", "أستنتج", "أبحث عن أدلة") if self.lang == "ar" else
+                                      ("Investigating", "Deducing", "Sleuthing"))
+            if user and not self.audio.playing:
+                self.music_cmd("play", 9, quiet=True)
+        self.stat("anime")
+
+    def anime_step(self, dt, mx, my, pose):
+        a = self.anime
+        if not a:
+            self.timer = 0
+            return
+        k, P, PW, PH = self.k, self.P, self.PW, self.PH
+        a["t"] += dt
+        t, kind, side = a["t"], a["kind"], a["side"]
+        ar = self.lang == "ar"
+        fx_ok = self.fx_on()
+        cx, cy = self.pet_center()
+        self.dir = side
+
+        def once(key, at):
+            if t >= at and key not in a["done"]:
+                a["done"].add(key)
+                return True
+            return False
+
+        def hand():   # the hand on the facing side, in screen coordinates
+            x, y = self.T(16.4 if side > 0 else -.4, 4.5)
+            return x + self.wx, y + self.wy
+
+        if kind == "luffy":   # Gomu Gomu no... PISTOL! (or GATLING!)
+            pose["hat"] = "straw"
+            if once("gomu", 0):
+                self.sayl("gomu")
+            if t < .9:
+                pose.update(eyes="angry", arms="wave2" if side > 0 else "wave", tilt=-side * .14)
+                self.sq = -.15 * t
+            else:
+                if once("punch", .9):
+                    gat = random.random() < .4
+                    sx, sy = hand()
+                    tx, ty = (mx, my) if (mx - sx) * side > 120 * k else (sx + side * 650 * k, sy)
+                    d = math.hypot(tx - sx, ty - sy)
+                    if d > 900 * k:
+                        tx, ty = sx + (tx - sx) * 900 * k / d, sy + (ty - sy) * 900 * k / d
+                    if fx_ok:
+                        self.fxl.add("arm", sx, sy, 1.3 if gat else .65, tx=tx, ty=ty, P=P, gat=gat)
+                    self.sayl("gatling" if gat else "pistol")
+                    self.sfx("boing")
+                    hit = user32.GetAncestor(user32.WindowFromPoint(wt.POINT(int(tx), int(ty))), 2)
+                    if hit and any(h == hit for h, *_ in self.windows):
+                        vx = side * 1700 * k
+                        self.root.after(170, lambda: (self.shove_window(hit, vx, 0, .25), self.sfx("kick")))
+                pose.update(eyes="angry" if t < 2 else "happy", arms="down", tilt=side * .1 if t < 2 else 0, mouth=t > 2.2)
+                if once("op", 2.2):
+                    self.sayl("one_piece")
+        elif kind == "shanks":   # Conqueror's Haki: the whole screen trembles
+            pose["hat"] = "shanks"
+            if once("calm", 0):
+                self.say("...")
+            if t < 1.3:
+                pose.update(eyes="half", arms="down")
+            else:
+                if once("haki", 1.3):
+                    self.sayl("haki")
+                    self.sfx("haki")
+                    self.sfx("boom", .8)
+                    if fx_ok:
+                        self.fxl.add("haki", cx, cy, 2.0)
+                        self.fxl.add("menace", cx + side * PW * .9, cy - PH * 1.2, 2.8)
+                    for h, *_ in self.windows[:6]:
+                        self.shove_window(h, 0, 0, shake=.7)
+                    if self.ball:
+                        self.ball.vy, self.ball.plat = 1300 * k, None
+                pose.update(eyes="angry" if t < 3.3 else "half", arms="down", bob=math.sin(t * 30) * .04 if t < 2.5 else 0)
+                if once("after", 3.4):
+                    self.sayl("haki_after")
+        elif kind == "goku":   # power up -> Super Saiyan
+            if t < 3:
+                pose.update(eyes="angry", arms="down", mouth=True, aura=t > 1.2, bob=random.uniform(-.08, .08),
+                            hat="ssj" if t > 2.2 and int(t * 12) % 2 else None)
+                self.sq = max(self.sq, .12)
+                if once("scream", 0):
+                    self.sayl("charge")
+                    self.sfx("charge", .6)
+                if once("scream2", 1.5):
+                    self.sfx("charge", .7)
+                if fx_ok and self.cooldown("ki_rock", .16):
+                    self.fxl.add("rock", self.fx + random.uniform(-1.4, 1.4) * PW, self.fy, 1.4, vx=random.uniform(-40, 40) * k,
+                                 vy=-random.uniform(500, 900) * k, s=random.uniform(.25, .5) * P)
+                if fx_ok and self.cooldown("ki_bolt", .22):
+                    self.fxl.add("bolt", cx, cy, .3)
+                if self.cooldown("ki_zap", .3):
+                    self.sfx("zap", .25)
+                if t > 1.5 and self.cooldown("ki_shake", .6):
+                    for h, *_ in self.windows[:3]:
+                        self.shove_window(h, 0, 0, shake=.25)
+            else:
+                if once("ssj", 3.0):
+                    self.ssj_until = self.time + 45
+                    self.sayl("ssj")
+                    self.sfx("boom", .9)
+                    self.sq, self.sqv = .4, 0
+                    self.spawn("spark", 10)
+                    if fx_ok:
+                        self.fxl.add("flash", cx, cy, .6)
+                pose.update(eyes="angry", arms="down", hat="ssj", aura=True)
+        elif kind == "kame":   # Ka... me... ha... me... HAAA!
+            pose.update(eyes="angry", arms="down", aura=self.time < self.ssj_until,
+                        extra=[(16, 3.8, 18, 6, ORANGE)] if side > 0 else [(-2, 3.8, 0, 6, ORANGE)])
+            hx, hy = hand()
+            if once("charge", 0):
+                if fx_ok:
+                    a["beam"] = self.fxl.add("kame", hx, hy, 4.3, fire=2.6, tx=hx + side * 900 * k, ty=hy, P=P)
+                self.sfx("charge", .6)
+            words = (["كا...", "مي...", "ها...", "مي..."] if ar else ["Ka...", "me...", "ha...", "me..."])
+            for i, wd in enumerate(words):
+                if once("w%d" % i, i * .6):
+                    self.say(wd)
+            if once("fire", 2.6):
+                self.say("هاااااااا!" if ar else "HAAAAAAA!")
+                self.sfx("boom", .9)
+                self.sfx("static", .5)
+                tx, ty = (mx, my) if (mx - hx) * side > 120 * k else (hx + side * 1300 * k, hy)
+                if a.get("beam"):
+                    a["beam"]["tx"], a["beam"]["ty"] = tx, ty
+                for h, r, *_ in self.windows:
+                    if r[0] < tx < r[2] and r[1] < ty < r[3]:
+                        self.shove_window(h, side * 1500 * k, 0, .4)
+                        break
+            if 2.6 < t < 4:
+                self.move_along(-side * 40 * k * dt)   # recoil
+                pose["bob"] = math.sin(t * 40) * .05
+        elif kind == "deathnote":   # writes in a black notebook... evil laugh
+            pose.update(red_eyes=True, eyes="half", arms="type",
+                        extra=[(4.2, 4.2, 11.8, 8.4, "#111111"), (5, 4.7, 11, 5.3, "#EEEEEE")])
+            if once("open", 0):
+                self.sayl("dn_open")
+            if once("menace", .3) and fx_ok:
+                self.fxl.add("menace", cx + side * PW, cy - PH * 1.1, 6.5)
+            if once("page", .6) and fx_ok:
+                L_, T_, R_, B_ = self.mon
+                x = min(max(self.fx + side * PW * 1.9, L_ + 140 * k), R_ - 140 * k)
+                self.fxl.add("page", x, max(T_ + 100 * k, self.fy - PH * 2.7), 6.6, text=self.line("dn_victims"))
+            if t < 4.2 and self.cooldown("type", .13):
+                self.sfx("type", .45)
+            if once("plan", 4.4):
+                self.sfx("laugh", .8)
+                self.sayl("dn_plan")
+            if t > 4.4:
+                pose.update(eyes="happy", arms="wave" if int(t * 10) % 2 else "wave2", mouth=True,
+                            bob=-abs(math.sin(t * 14)) * .3, extra=[])
+            if once("done", 6.4):
+                self.sayl("dn_done")
+        elif kind == "detective":   # Conan mode: magnifying glass, then THE culprit
+            pose.update(glasses=True, bowtie=True)
+            a["spin"] = t < 2.3
+            if t < 5:
+                pose.update(magnifier=True, tilt=side * .08)
+                if self.surf == "floor":
+                    self.move_along(side * 45 * k * dt)
+                    self.walkdist += 45 * k * dt
+                    pose["gait"] = self.walkdist / (P * 1.7) * math.pi
+                if once("clue", 2.4):
+                    self.sayl("det_clue")
+                    self.spawn("bang")
+                    self.sfx("ding", .6)
+            else:
+                if once("reveal", 5):
+                    apps = [ti.split(" - ")[-1].strip() for _, _, ti, _ in self.windows if ti and len(ti) < 80]
+                    x = random.choice(apps) if apps and random.random() < .5 else self.line("det_x")
+                    self.say(self.line("det_reveal", x=x[:32]))
+                    self.sfx("ding")
+                    self.sq, self.sqv = .3, 0
+                    if fx_ok:
+                        self.fxl.add("flash", cx, cy, .7)
+                pose.update(eyes="angry", arms="down",
+                            extra=[(16, 2.4, 19.5, 3.4, ORANGE)] if side > 0 else [(-3.5, 2.4, 0, 3.4, ORANGE)])
+
+    def start_odm(self):
+        """Levi's ODM gear: grapple onto window corners / the ceiling and zip across the screen, spinning."""
+        k = self.k
+        L_, T_, R_, B_ = self.mon
+        if self.state == "web":
+            self.end_web()
+        tops = [r for _, r, *_ in self.windows if T_ + 60 * k < r[1] < B_ - 200 * k]
+        pts = [(r[0] + 20 * k, r[1]) for r in tops] + [(r[2] - 20 * k, r[1]) for r in tops]
+        pts += [(random.uniform(L_ + 100 * k, R_ - 100 * k), T_) for _ in range(5)]
+        seq, x, side = [], self.fx, (1 if R_ - self.fx > self.fx - L_ else -1)
+        for _ in range(4):
+            cand = [p_ for p_ in pts if 200 * k < (p_[0] - x) * side < 900 * k] or \
+                [(min(max(x + side * random.uniform(350, 700) * k, L_ + 80 * k), R_ - 80 * k), T_)]
+            p_ = random.choice(cand)
+            seq.append(p_)
+            x = p_[0] + side * 300 * k
+            if not L_ + 350 * k < x < R_ - 350 * k:
+                side = -side
+        cx, cy = self.pet_center()
+        self.hide_info = self.work = self.anime = self.kick = self.goto = None
+        self.after_land = self.chain = self._chain2 = None
+        self.fly_forever = False
+        self.fx, self.fy = cx, cy + self.PH / 2
+        self.surf, self.plat, self.sink = "air", None, 0.0
+        self.state, self.timer = "odm", 30
+        self.odm = {"seq": seq, "i": 0, "seg": None, "v": (0.0, 0.0)}
+        self.sayl("levi_go")
+        self.sfx("whoosh")
+
+    def odm_step(self, dt, mx, my, pose):
+        o, k = self.odm, self.k
+        L_, T_, R_, B_ = self.mon
+        h = self.half()
+        pose.update(eyes="half", arms="wave" if int(self.time * 6) % 2 else "wave2",
+                    extra=[(15.6, .8, 16.3, 6.6, "#C9D1D9"), (-.3, .8, .4, 6.6, "#C9D1D9"),
+                           (-.8, 5.2, 1, 7.4, "#6B7280"), (15, 5.2, 16.8, 7.4, "#6B7280")])
+        if not o:
+            self.state = "fall"
+            return
+        if o["seg"] is None:
+            if o["i"] >= len(o["seq"]):   # done: let go and drop with style
+                self.odm = None
+                if self.fxl:
+                    self.fxl.beam = None
+                self.state, self.max_v, self.tumble = "jump", 0.0, 0.0
+                self.vx, self.vy = o["v"][0] * .35, -350 * k
+                self.spin = 7 if self.vx > 0 else -7
+                self.after_land = lambda: (self.set_state("proud", 1.8), self.sayl("levi_end"))
+                return
+            ax, ay = o["seq"][o["i"]]
+            side = 1 if ax >= self.fx else -1
+            tx = min(max(ax + side * random.uniform(220, 420) * k, L_ + h), R_ - h)
+            ty = min(max(ay + random.uniform(220, 340) * k, T_ + self.PH + 20 * k), B_ - 20 * k)
+            o["seg"] = {"p0": (self.fx, self.fy), "c": (ax, ay + 140 * k), "p1": (tx, ty), "a": (ax, ay), "t": 0.0,
+                        "dur": .55, "side": side, "slash": False}
+            self.dir = side
+            self.sfx("whoosh", .6)
+        sg = o["seg"]
+        sg["t"] += dt
+        u = min(1.0, sg["t"] / sg["dur"])
+        e = u * u * (3 - 2 * u)
+        (x0, y0), (xc, yc), (x1, y1) = sg["p0"], sg["c"], sg["p1"]
+        nx = (1 - e) ** 2 * x0 + 2 * (1 - e) * e * xc + e * e * x1
+        ny = (1 - e) ** 2 * y0 + 2 * (1 - e) * e * yc + e * e * y1
+        o["v"] = ((nx - self.fx) / max(dt, 1e-3), (ny - self.fy) / max(dt, 1e-3))
+        self.fx, self.fy = nx, ny
+        self.spin = sg["side"] * 16
+        cx, cy = self.pet_center()
+        if self.fxl:
+            ax, ay = sg["a"]
+            self.fxl.beam = [(cx, cy, ax, ay, "#D1D5DB", 2), (ax - 6 * k, ay + 3 * k, ax + 6 * k, ay + 3 * k, "#4B5563", 5)]
+        if u > .55 and not sg["slash"]:
+            sg["slash"] = True
+            if self.fx_on():
+                self.fxl.add("slash", cx, cy, .35, a=random.uniform(0, 360))
+            self.sfx("zap", .3)
+        if u >= 1:
+            o["seg"] = None
+            o["i"] += 1
+
     # ---------------------------------------------------------- v1.2: games
     def end_game(self):
         g, self.game = self.game, None
@@ -5034,6 +5471,15 @@ class Clawd:
             elif self.energy < 15:
                 eyes = "half"
 
+        # golden Super Saiyan aura (behind him)
+        if (self.time < self.ssj_until and s != "sleep") or pose.get("aura"):
+            pts = []
+            for i in range(18):
+                ang = i / 18 * 2 * math.pi
+                rr = 1.0 + (.35 + .25 * math.sin(self.time * 25 + i * 1.7)) * (1 if i % 2 else .5)
+                pts += self.T(8 + math.cos(ang) * 9.5 * rr, 4 + math.sin(ang) * 6.5 * rr - (2 if math.sin(ang) < 0 else 0))
+            c.create_polygon(*pts, fill="#FFE066" if int(self.time * 12) % 2 else "#FFF3A3", outline="#FFB800", width=2,
+                             tags="fx")
         # body
         self.rect(2, 0, 14, 7, ORANGE)
         # arms (eased towards the pose, so they move smoothly instead of snapping)
@@ -5099,7 +5545,23 @@ class Clawd:
             self.rect(9.4, 1.7, 12.8, 4.2, BLACK)
             self.rect(3.7, 2.1, 4.5, 2.6, "white", "fx")
             self.rect(9.9, 2.1, 10.7, 2.6, "white", "fx")
-        if s == "laser":
+        if pose.get("glasses"):   # big round detective glasses
+            for u0 in (2.9, 9.9):
+                for a1, b1, a2, b2 in ((u0, 1.2, u0 + 3.2, 1.55), (u0, 4.45, u0 + 3.2, 4.8), (u0, 1.2, u0 + .35, 4.8),
+                                       (u0 + 2.85, 1.2, u0 + 3.2, 4.8)):
+                    self.rect(a1, b1, a2, b2, "#222222")
+            self.rect(6.1, 2.4, 9.9, 2.75, "#222222")
+        if pose.get("bowtie"):
+            self.rect(6.2, 6.0, 7.7, 7.4, "#C0392B")
+            self.rect(8.3, 6.0, 9.8, 7.4, "#C0392B")
+            self.rect(7.6, 6.3, 8.4, 7.1, "#8E1E14")
+        if pose.get("magnifier"):
+            u = 16.6 if self.dir > 0 else -.6
+            self.rect(u - .25, 6.2, u + .25, 8.6, "#6B4A2A")
+            mx_, my_ = self.T(u, 5)
+            r_ = P * 1.5
+            c.create_oval(mx_ - r_, my_ - r_, mx_ + r_, my_ + r_, outline="#444444", width=max(2, P * .35), fill="#CFEFFF", tags="pet")
+        if s == "laser" or pose.get("red_eyes"):
             for col in (4, 11):
                 self.rect(col + eu - .25, 2 + ev - .25, col + eu + 1.25, 2 + ev + 2.25, "#FF2D2D", "fx")
 
@@ -5111,6 +5573,22 @@ class Clawd:
             spin = int(self.time * 24) % 4
             span = (4.5, 2.5, .6, 2.5)[spin]
             self.rect(8 - span, -2.9, 8 + span, -2.4, ("#F5C542", "#E5484D")[spin % 2], "pet")
+        elif pose.get("hat") == "straw":   # Luffy's straw hat
+            self.rect(1.2, -.7, 14.8, .2, "#E8C547")
+            self.rect(4, -2.8, 12, -.7, "#E8C547")
+            self.rect(4, -1.5, 12, -.7, "#C0392B")
+        elif pose.get("hat") == "shanks":   # red hair + black cape
+            self.rect(2.5, -.9, 13.5, .3, "#B22222")
+            self.rect(3.5, -1.8, 7.5, -.9, "#B22222")
+            self.rect(9, -1.6, 12.5, -.9, "#B22222")
+            self.rect(-1.2, .4, .2, 9, "#1B1B1B")
+            self.rect(15.8, .4, 17.2, 9, "#1B1B1B")
+        elif (self.time < self.ssj_until and s != "sleep") or pose.get("hat") == "ssj":   # Super Saiyan hair
+            gold = "#FFD700"
+            self.rect(2.5, -1.1, 13.5, .3, gold)
+            for u1, h_ in ((3, 2.2), (5.2, 3.3), (7.4, 3.9), (9.6, 3.3), (11.8, 2.4)):
+                self.rect(u1, -1.1 - h_, u1 + 1.6, -1.1, gold)
+                self.rect(u1 + .4, -1.9 - h_, u1 + 1.2, -1.1 - h_, gold)
         elif s in ("build", "mine", "smash"):   # hard hat (+ a lamp for mining)
             self.rect(2, -.3, 14, .4, "#D9A520")
             self.rect(3.5, -1.4, 12.5, -.3, "#F5C542")
@@ -5122,7 +5600,8 @@ class Clawd:
             self.rect(5, -1.5, 10, -.6, "#4A6FA5")
             self.rect(7.5, -2.3, 11, -1.5, "#4A6FA5")
             self.rect(11, -2.6, 12.2, -1.4, "white")
-        if (self.audio.playing or s == "dance") and self.surf != "fly" and s not in ("sleep", "exercise", "build", "mine", "smash"):  # headphones
+        if (self.audio.playing or s == "dance") and self.surf != "fly" and s not in ("sleep", "exercise", "build", "mine", "smash", "anime", "odm") \
+                and self.time >= self.ssj_until:  # headphones
             self.rect(1.4, -1.1, 14.6, -.4, "#2b2b2b")
             self.rect(1.0, -.4, 2.0, 3.8, "#2b2b2b")
             self.rect(14.0, -.4, 15.0, 3.8, "#2b2b2b")
@@ -5207,7 +5686,8 @@ class Clawd:
             offset = self.draw_timer_pill()
         if self.ask_req:
             self.draw_ask(offset)
-        elif s == "think" or self.waiting or (s in ("build", "mine") and self.work and not self.work.get("done")):
+        elif s == "think" or self.waiting or (s in ("build", "mine") and self.work and not self.work.get("done")) \
+                or (s == "anime" and self.anime and self.anime.get("spin")):
             spin = SPIN[int(self.time * 12) % len(SPIN)]
             self.draw_bubble(f"{spin} {self.word}{'.' * (1 + int(self.time * 3) % 3)}", offset, ORANGE)
         elif self.bubble is not None:
@@ -5891,6 +6371,14 @@ class Clawd:
             mi.add_command(label="↩  " + tr("undo_win"), command=self.undo_windows)
         m.add_cascade(label=tr("mischief"), menu=mi)
 
+        an = tk.Menu(m, tearoff=0)
+        for key, ic in (("luffy", "👒"), ("shanks", "⚡"), ("goku", "💥"), ("kame", "🔵"), ("deathnote", "📓"), ("levi", "⚔"),
+                        ("detective", "🔍")):
+            an.add_command(label=ic + "  " + tr("an_" + key), command=lambda k_=key: self.start_anime(k_, user=True))
+        an.add_separator()
+        an.add_command(label="🏴‍☠️  " + tr("an_mode"), command=lambda: self.set_persona("anime"))
+        m.add_cascade(label=tr("anime"), menu=an)
+
         pm = tk.Menu(m, tearoff=0)
         pv = tk.StringVar(value=self.cfg.get("personality", "balanced"))
         for key, nm in zip(PERSONAS, T["personas"][1 if self.lang == "ar" else 0]):
@@ -6053,12 +6541,17 @@ class FxLayer:
         self.items = keep
         if self.beam:
             k = self.pet.k
-            for x1, y1, x2, y2 in self.beam:
+            for b in self.beam:
+                x1, y1, x2, y2 = b[:4]
+                if len(b) > 4:   # plain line (e.g. Levi's grappling wire)
+                    c.create_line(x1 - ox, y1 - oy, x2 - ox, y2 - oy, fill=b[4], width=max(1, b[5] * k))
+                    continue
                 c.create_line(x1 - ox, y1 - oy, x2 - ox, y2 - oy, fill="#FF2D2D", width=max(3, 5 * k))
                 c.create_line(x1 - ox, y1 - oy, x2 - ox, y2 - oy, fill="#FFD0D0", width=max(1, 1.6 * k))
-            x2, y2 = self.beam[0][2] - ox, self.beam[0][3] - oy
-            r = (8 + 3 * math.sin(time.perf_counter() * 40)) * k
-            c.create_oval(x2 - r, y2 - r, x2 + r, y2 + r, fill="#FF6B6B", outline="")
+            if len(self.beam[0]) == 4:
+                x2, y2 = self.beam[0][2] - ox, self.beam[0][3] - oy
+                r = (8 + 3 * math.sin(time.perf_counter() * 40)) * k
+                c.create_oval(x2 - r, y2 - r, x2 + r, y2 + r, fill="#FF6B6B", outline="")
 
     # --- drawers (all coordinates are screen coordinates, minus the overlay's origin)
     def d_foot(self, c, it, dt, ox, oy):
@@ -6216,6 +6709,131 @@ class FxLayer:
             gx, gy = x + random.uniform(-150, 150) * k, y + random.uniform(-100, 100) * k
             c.create_text(gx, gy, text=random.choice(("ERR0R", "0xDEAD", "NaN", "segfault", "undefined", "�")),
                           fill="#39FF14", font=("Consolas", -int(18 * k), "bold"))
+
+    # --- anime effects
+    def d_arm(self, c, it, dt, ox, oy):   # Luffy's stretchy arm (pistol / gatling)
+        t, P, k = it["t"], it["P"], self.pet.k
+        sx, sy = it["x"] - ox, it["y"] - oy
+        tx, ty = it["tx"] - ox, it["ty"] - oy
+        fists = []
+        if it.get("gat"):
+            if "rs" not in it:
+                it["rs"] = [(random.uniform(-1, 1), random.uniform(-1, 1)) for _ in range(40)]
+            for j in range(4):
+                ph = (t * 7 + j / 4) % 1
+                e = math.sin(math.pi * ph)
+                ra, rb = it["rs"][(int(t * 7) * 4 + j) % 40]
+                gx, gy = tx + ra * 70 * k, ty + rb * 60 * k
+                fists.append((sx + (gx - sx) * e, sy + (gy - sy) * e))
+        else:
+            e = min(1.0, t / .16) if t < .3 else max(0.0, 1 - (t - .3) / .3)
+            fists.append((sx + (tx - sx) * e ** .7, sy + (ty - sy) * e ** .7))
+        for fx_, fy_ in fists:
+            c.create_line(sx, sy, fx_, fy_, fill=ORANGE, width=max(4, P * 1.6))
+            s = P * 1.4
+            c.create_rectangle(fx_ - s, fy_ - s, fx_ + s, fy_ + s, fill=ORANGE, outline="#8A3E22", width=max(1, k * 1.5))
+            for i in (-1, 1):   # speed lines
+                c.create_line(fx_ - (tx - sx) * .05, fy_ + i * s * 1.6, fx_ - (tx - sx) * .15, fy_ + i * s * 1.6,
+                              fill="#141414", width=max(1, k))
+
+    def d_haki(self, c, it, dt, ox, oy):   # Conqueror's Haki: shockwaves + black/red lightning
+        t, k = it["t"], self.pet.k
+        x, y = it["x"] - ox, it["y"] - oy
+        f = t / it["life"]
+        for i in range(3):
+            r = (t * 1300 - i * 240) * k
+            if r > 0:
+                c.create_oval(x - r, y - r, x + r, y + r, outline=("#7B2CBF", "#141414", "#E5484D")[i],
+                              width=max(2, 7 * k * (1 - f)))
+        if t < 1.3:
+            for _ in range(8):
+                a = random.uniform(0, 2 * math.pi)
+                ln = random.uniform(250, 750) * k
+                pts, px, py = [x, y], x, y
+                for j in range(7):
+                    px += math.cos(a) * ln / 7 + random.uniform(-25, 25) * k
+                    py += math.sin(a) * ln / 7 + random.uniform(-25, 25) * k
+                    pts += [px, py]
+                c.create_line(*pts, fill="#141414", width=max(3, 6 * k))
+                c.create_line(*pts, fill="#E5484D", width=max(1, 2 * k))
+
+    def d_menace(self, c, it, dt, ox, oy):   # ゴゴゴゴ
+        k, t = self.pet.k, it["t"]
+        x = it["x"] - ox + random.uniform(-3, 3) * k
+        y = it["y"] - oy - t * 12 * k + random.uniform(-3, 3) * k
+        for i, ch in enumerate("ゴゴゴ"):
+            c.create_text(x + i * 30 * k, y + (i % 2) * 18 * k, text=ch, fill="#7B2CBF",
+                          font=("Yu Gothic UI", -int(34 * k), "bold"))
+
+    def d_bolt(self, c, it, dt, ox, oy):   # little ki sparks around Goku
+        k = self.pet.k
+        x, y = it["x"] - ox, it["y"] - oy
+        for _ in range(2):
+            a = random.uniform(0, 2 * math.pi)
+            px, py = x + math.cos(a) * 60 * k, y + math.sin(a) * 45 * k
+            pts = [px, py]
+            for _ in range(3):
+                px += random.uniform(-22, 22) * k
+                py += random.uniform(-22, 22) * k
+                pts += [px, py]
+            c.create_line(*pts, fill="#FFF3A3", width=max(2, 3 * k))
+
+    def d_flash(self, c, it, dt, ox, oy):   # manga speed lines
+        k = self.pet.k
+        x, y = it["x"] - ox, it["y"] - oy
+        for _ in range(30):
+            a = random.uniform(0, 2 * math.pi)
+            r1 = random.uniform(150, 220) * k
+            r2 = r1 + random.uniform(200, 420) * k
+            c.create_line(x + math.cos(a) * r1, y + math.sin(a) * r1, x + math.cos(a) * r2, y + math.sin(a) * r2,
+                          fill="#141414", width=max(1, random.uniform(1, 3) * k))
+
+    def d_kame(self, c, it, dt, ox, oy):   # charge a ki ball, then the beam
+        t, k, fire = it["t"], self.pet.k, it["fire"]
+        hx, hy = it["x"] - ox, it["y"] - oy
+        if t < fire:
+            r = (6 + 24 * t / fire) * k + math.sin(t * 40) * 2 * k
+            c.create_oval(hx - r, hy - r, hx + r, hy + r, fill="#7DD3FC", outline="#38BDF8", width=max(2, 3 * k))
+            c.create_oval(hx - r * .5, hy - r * .5, hx + r * .5, hy + r * .5, fill="white", outline="")
+            return
+        u = t - fire
+        grow = min(1.0, u / .25)
+        tx = hx + (it["tx"] - ox - hx) * grow
+        ty = hy + (it["ty"] - oy - hy) * grow
+        w = 40 * k * (1 if u < 1.1 else max(0.0, 1 - (u - 1.1) / .5)) * (1 + .08 * math.sin(t * 50))
+        if w < 1:
+            return
+        c.create_line(hx, hy, tx, ty, fill="#38BDF8", width=w)
+        c.create_line(hx, hy, tx, ty, fill="#BAE6FD", width=w * .55)
+        c.create_line(hx, hy, tx, ty, fill="white", width=w * .22)
+        for px, py in ((hx, hy), (tx, ty)):
+            r = w * .7
+            c.create_oval(px - r, py - r, px + r, py + r, fill="#BAE6FD", outline="#38BDF8")
+
+    def d_page(self, c, it, dt, ox, oy):   # a Death Note page being written
+        k, t = self.pet.k, it["t"]
+        left = it["life"] - t
+        if left < .8 and int(left * 10) % 2:
+            return
+        x, y = it["x"] - ox, it["y"] - oy
+        W, H = 240 * k, 150 * k
+        c.create_rectangle(x - W / 2, y - H / 2, x + W / 2, y + H / 2, fill="#F7F3EA", outline="#333333", width=max(1, 2 * k))
+        c.create_rectangle(x - W / 2, y - H / 2, x + W / 2, y - H / 2 + 30 * k, fill="#111111", outline="")
+        c.create_text(x, y - H / 2 + 15 * k, text="DEATH NOTE", fill="white", font=("Times New Roman", -int(17 * k), "bold"))
+        for i in range(4):
+            yy = y - H / 2 + (52 + i * 26) * k
+            c.create_line(x - W / 2 + 12 * k, yy, x + W / 2 - 12 * k, yy, fill="#C9C2B5")
+        txt = it["text"][:max(0, int((t - .3) * 9))]
+        c.create_text(x, y - H / 2 + 62 * k, text=txt, fill="#141414", font=("Segoe Script", -int(19 * k), "bold"))
+
+    def d_slash(self, c, it, dt, ox, oy):   # Levi's blade slash
+        k, f = self.pet.k, it["t"] / it["life"]
+        x, y = it["x"] - ox, it["y"] - oy
+        r = (50 + 70 * f) * k
+        c.create_arc(x - r, y - r, x + r, y + r, start=it["a"], extent=130, style="arc", outline="white",
+                     width=max(2, 6 * k * (1 - f)))
+        c.create_arc(x - r * .9, y - r * .9, x + r * .9, y + r * .9, start=it["a"] + 10, extent=110, style="arc",
+                     outline="#93C5FD", width=max(1, 2 * k * (1 - f)))
 
 
 class TicTacToe:
