@@ -69,6 +69,14 @@ thing is portable: copy the folder, share it, done.
     "There's only one truth! The culprit is...".
   - In Arabic he'll tell you "ون بيس عمك!".
 - **More music**: three new original anime-style tracks: "Detective Case", "Pirate Adventure" and "Power Up!".
+- **The real anime songs**: Music → Anime songs has 12 of them: One Piece (We Are!, We Go!, Binks' Sake, the
+  Arabic opening), Detective Conan (the main theme and the Arabic opening), Dragon Ball Z, Naruto, Attack on
+  Titan, Death Note, and the Arabic openings of Captain Majed and Grendizer. Each anime move you pick plays its
+  own theme. The songs stream from YouTube, and their links are looked up in the background so they open
+  instantly.
+- **Your own music folder** (`Clawd Data\music`): song files you own play instantly inside Clawd, offline.
+  Name them like `One Piece We Are.mp3` or `شارة كونان.mp3` and the matching anime move uses your file
+  instead of YouTube. "Play X" in the chat checks this folder first.
 - **Weather in Arabic**: Arabic descriptions and place names. Place names are resolved properly, so "Riyadh"
   is no longer South Africa.
 - **Window awareness**: he notices new windows, complains when the window he stands on disappears, rides

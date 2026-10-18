@@ -54,7 +54,7 @@ try:
 except Exception:
     pygame = None
 
-APP, VERSION = "Clawd", "1.3.0"
+APP, VERSION = "Clawd", "1.3.1"
 ORANGE, BLACK, KEY, CREAM = "#D97757", "#141414", "#ff00fe", "#F4EFE8"
 HOME = os.path.expanduser("~")
 FROZEN = getattr(sys, "frozen", False)
@@ -81,6 +81,7 @@ CFG_PATH = os.path.join(DATA, "config.json")
 NOTES_PATH = os.path.join(DATA, "notes.txt")
 CHAT_PATH = os.path.join(DATA, "chat.json")
 CACHE = os.path.join(DATA, "cache")
+MUSIC_DIR = os.path.join(DATA, "music")   # your own song files: played instantly, offline
 OLD_CFG = os.path.join(HOME, ".clawd_pet.json")
 ICON = os.path.join(RES_DIR, "assets", "clawd.ico")
 STARTUP = os.path.join(os.environ.get("APPDATA", ""), r"Microsoft\Windows\Start Menu\Programs\Startup", "ClawdPet.vbs")
@@ -113,7 +114,7 @@ FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "clau
 DEFAULT_CFG = dict(scale=1.0, lang="auto", sound=True, talk=True, sfx_vol=0.7, music_vol=0.45, ask_rate="normal",
                    follow=True, climb=True, windows=True, fly=True, smart=True, reminders=True, provider="anthropic",
                    brains={}, trust=[], first_run=True, name="", memory=[], stats={}, focus_guard=True,
-                   workout=True, asked_name=False, personality="balanced", mischief=True, desk_fx=True)
+                   workout=True, asked_name=False, personality="balanced", mischief=True, desk_fx=True, anime_yt=True, yt_cache={})
 ASK_RATES = {"often": (25, 50), "normal": (60, 120), "rare": (180, 360), "off": None}
 PERSONAS = {  # multipliers used when he decides what to do next
     "balanced": dict(speed=1.0, naughty=1.0, lazy=1.0, social=1.0),
@@ -124,6 +125,27 @@ PERSONAS = {  # multipliers used when he decides what to do next
     "anime": dict(speed=1.2, naughty=1.3, lazy=.7, social=1.3),
 }
 ANIME = ("luffy", "shanks", "goku", "kame", "deathnote", "levi", "detective")
+# the real songs, streamed from YouTube in the browser: (English name, Arabic name, search query)
+ANIME_SONGS = [
+    ("One Piece - We Are!", "ون بيس - We Are!", "One Piece opening 1 We Are! Hiroshi Kitadani"),
+    ("One Piece - We Go!", "ون بيس - We Go!", "One Piece Opening 15 We Go! Hiroshi Kitadani"),
+    ("One Piece - Binks' Sake", "ون بيس - شراب بينكس", "Binks no Sake Brook One Piece Japanese"),
+    ("One Piece - Arabic opening", "شارة ون بيس العربية", "شارة ون بيس العربية"),
+    ("Detective Conan - Main Theme", "المحقق كونان - الموسيقى الرئيسية", "Detective Conan main theme"),
+    ("Detective Conan - Arabic opening", "شارة المحقق كونان العربية", "شارة المحقق كونان العربية"),
+    ("Dragon Ball Z - Cha-La Head-Cha-La", "دراغون بول زد - Cha-La Head-Cha-La", "Cha-La Head-Cha-La Dragon Ball Z opening"),
+    ("Naruto Shippuden - Blue Bird", "ناروتو شيبودن - Blue Bird", "Naruto Shippuden opening Blue Bird"),
+    ("Attack on Titan - Guren no Yumiya", "هجوم العمالقة - Guren no Yumiya", "Attack on Titan opening 1 Guren no Yumiya"),
+    ("Death Note - L's Theme", "مذكرة الموت - موسيقى L", "Death Note OST L's Theme A"),
+    ("Captain Tsubasa - Arabic opening", "شارة الكابتن ماجد", "شارة الكابتن ماجد"),
+    ("Grendizer - Arabic opening", "شارة غريندايزر", "شارة غرندايزر العربية"),
+]
+SONG_KEYS = [("we are",), ("we go",), ("binks", "بينكس"), ("ون بيس", "one piece arabic"),
+             ("detective conan", "conan theme", "conan main"), ("كونان",), ("cha-la", "chala", "cha la", "dragon ball"),
+             ("blue bird", "naruto", "ناروتو"), ("guren", "attack on titan", "shingeki", "titan"),
+             ("death note", "l's theme", "l theme"), ("ماجد", "tsubasa"), ("غريندايزر", "غرندايزر", "جرندايزر", "grendizer")]
+ANIME_THEME = {"luffy": (0, 1, 3), "shanks": (2,), "goku": (6,), "kame": (6,), "deathnote": (9,), "levi": (8,),
+               "detective": (4, 5)}
 PERSONA_DESC = {
     "balanced": "",
     "naughty": "The user set your personality to NAUGHTY: a mischievous prankster - you tease, plot harmless pranks, "
@@ -233,6 +255,9 @@ T = {
     "an_levi": ("Levi: ODM gear", "ليفاي: معدات المناورة"),
     "an_detective": ("Detective mode (Conan)", "وضع المحقق (كونان)"),
     "an_mode": ("Anime fan personality", "شخصية الأوتاكو"),
+    "an_songs": ("Anime songs (real, on YouTube)", "أغاني الأنمي (الأصلية من يوتيوب)"),
+    "music_dir": ("Open my music folder (instant offline play)", "افتح مجلد أغانيي (تشغيل فوري بدون نت)"),
+    "animeyt_lbl": ("Anime moves play the real theme on YouTube", "حركات الأنمي تشغّل الأغنية الأصلية من يوتيوب"),
     "mischief_lbl": ("Mischief: he may kick and shove my windows", "مشاغبة: يقدر يركل ويحرك نوافذي"),
     "deskfx_lbl": ("Desktop effects (footprints, cracks, confetti, doodles)", "تأثيرات سطح المكتب (آثار أقدام، شقوق، قصاصات، رسومات)"),
     "mischief": ("Mischief & effects", "مشاغبة وتأثيرات"),
@@ -455,6 +480,7 @@ L = {  # random lines (English, Arabic)
     "ball_hit": (["OW! My head!", "Hey! Watch it!", "Bonk."], ["آي! راسي!", "هيه! انتبه!", "بونك."]),
     "header": (["Header!", "Nice pass!", "Boing!"], ["ضربة رأس!", "تمريرة حلوة!", "بوينغ!"]),
     "fetch": (["Catch!", "Your turn!", "Coming at you!"], ["امسك!", "دورك!", "جايتك!"]),
+    "local_play": (["Playing {q} from your music folder!"], ["أشغّل {q} من مجلد أغانيك!"]),
     "fetch_hint": (["Throw the ball! I'll pass it back - catch it!"], ["ارمِ الكرة! بمررها لك - امسكها!"]),
     "fetch_n": (["Nice catch! {n} in a row!", "{n}! You're good at this."], ["مسكة حلوة! {n} على التوالي!", "{n}! أنت شاطر."]),
     "seek_start": (["Hide and seek! Close your eyes... 3... 2... 1... Then find me with the mouse!"],
@@ -1685,6 +1711,19 @@ class Clawd:
             self.root.after(9000, self.ask_name)
         self.refresh_windows()
         try:
+            os.makedirs(MUSIC_DIR, exist_ok=True)
+            readme = os.path.join(MUSIC_DIR, "README.txt")
+            if not os.path.exists(readme):
+                with open(readme, "w", encoding="utf-8") as f:
+                    f.write("Put your own song files here (mp3, wav, ogg, flac) - Clawd plays them instantly, offline.\n"
+                            "Name them so he can match them, e.g. 'One Piece - We Are.mp3', 'Detective Conan theme.mp3',\n"
+                            "'Naruto Blue Bird.mp3', 'شارة كونان.mp3', 'شارة ون بيس.mp3'. Anime moves then use your file.\n\n"
+                            "ضع ملفات أغانيك هنا (mp3 وغيرها) - كلود يشغلها فوراً بدون نت.\n"
+                            "سمّها باسم الأنمي مثل: 'شارة كونان.mp3' أو 'One Piece We Are.mp3' وحركات الأنمي تستخدمها.\n")
+        except OSError:
+            pass
+        root.after(15000, self.prefetch_songs)
+        try:
             self.fxl = FxLayer(self)
             root.lift()
         except Exception as e:  # noqa
@@ -2653,7 +2692,9 @@ class Clawd:
             '{"type":"game","name":"tictactoe|hide_seek|tag|guess|fetch|rps"} - play a game with the user\n'
             '{"type":"anime","name":"luffy|shanks|goku|kame|deathnote|levi|detective"} - anime moves: Luffy gum-gum '
             'pistol, Shanks conqueror haki (screen trembles), Goku super saiyan, kamehameha beam, Death Note, Levi ODM '
-            'gear, Detective Conan mode (with detective music)\n'
+            'gear, Detective Conan mode (with detective music). Each move also plays its real theme song on YouTube.\n'
+            'For any anime song (One Piece, Conan, Dragon Ball, Naruto, Arabic Spacetoon openings like Captain Majed or '
+            'Grendizer...) use the youtube action with the song name.\n'
             '{"type":"personality","name":"balanced|naughty|lazy|hyper|sweet|anime"} - only when the user asks\n\n'
             f"Context: {self.context_str()}.")
 
@@ -2996,18 +3037,80 @@ class Clawd:
         self.set_state("eat")
         self.hunger = max(0.0, self.hunger - 5)
 
-    def play_youtube(self, query):
+    def local_music(self):
+        try:
+            return [os.path.join(MUSIC_DIR, f) for f in sorted(os.listdir(MUSIC_DIR))
+                    if f.lower().endswith((".mp3", ".wav", ".ogg", ".flac"))]
+        except OSError:
+            return []
+
+    def find_local(self, query):
+        """A song file in Clawd Data/music that matches the request (by name or by anime song keywords)."""
+        ql = query.lower().strip()
+        files = self.local_music()
+        for f in files:
+            name = os.path.splitext(os.path.basename(f))[0].lower()
+            if len(ql) > 2 and (ql in name or (len(name) > 3 and name in ql)):
+                return f
+        for keys in SONG_KEYS:
+            if any(k in ql for k in keys):
+                for f in files:
+                    if any(k in os.path.basename(f).lower() for k in keys):
+                        return f
+        return None
+
+    def play_local(self, f, quiet=False):
+        if not self.audio.play_files([f]):
+            return False
+        if quiet:
+            return True
+        self.on_music_start()
+        self.say(self.line("local_play", q=os.path.splitext(os.path.basename(f))[0][:40]))
+        return True
+
+    def prefetch_songs(self):
+        """Look up the anime songs' YouTube links in the background, so clicking one later opens it instantly."""
+        todo = [q for _, _, q in ANIME_SONGS if q not in self.cfg.setdefault("yt_cache", {})]
+        if not todo:
+            return
+
+        def work():
+            got = {}
+            for q in todo:
+                try:
+                    url, title = youtube_find(q)
+                    if url:
+                        got[q] = [url, title]
+                except Exception:
+                    pass
+            self.q.put(("call", lambda: (self.cfg.setdefault("yt_cache", {}).update(got), self.save())))
+        threading.Thread(target=work, daemon=True).start()
+
+    def play_youtube(self, query, quiet=False):
         query = query.strip()
         if not query:
             return
-        self.say(self.line("yt_search", q=query))
-        self.waiting, self.word = True, "YouTube"
+        f = self.find_local(query)
+        if f and self.play_local(f, quiet):
+            return
+        cache = self.cfg.setdefault("yt_cache", {})
+        if query in cache:   # known link: open it right away
+            url, title = cache[query]
+            self.root.after(0, lambda: found(url, title))
+        else:
+            if not quiet:
+                self.say(self.line("yt_search", q=query))
+                self.waiting, self.word = True, "YouTube"
 
         def work():
             try:
                 url, title = youtube_find(query)
             except Exception:
                 url, title = None, None
+            if url:
+                cache[query] = [url, title]
+                while len(cache) > 300:
+                    cache.pop(next(iter(cache)))
             self.q.put(("call", lambda: found(url, title)))
 
         def found(url, title):
@@ -3017,6 +3120,8 @@ class Clawd:
                     self.audio.stop()
                 webbrowser.open(url)
                 self.yt_song = (title or query)[:24].lower()
+                if quiet:
+                    return
                 self.say(self.line("yt_play", q=title or query))
                 self.set_state("dance", 25)
                 self.spawn("note", 3)
@@ -3024,7 +3129,8 @@ class Clawd:
             else:
                 webbrowser.open("https://www.youtube.com/results?search_query=" + urllib.parse.quote(query))
                 self.say(self.line("yt_fail"))
-        threading.Thread(target=work, daemon=True).start()
+        if query not in cache:
+            threading.Thread(target=work, daemon=True).start()
 
     def say_weather(self, place=""):
         self.say(self.line("weather_wait"))
@@ -4929,6 +5035,8 @@ class Clawd:
         if kind not in ANIME:
             kind = random.choice(ANIME)
         if kind == "levi":
+            if user:
+                self.anime_theme(kind)
             return self.start_odm()
         if self.surf != "floor":
             return self.need_floor(lambda: self.start_anime(kind, user))
@@ -4943,9 +5051,20 @@ class Clawd:
             self.anime["side"] = 1 if R_ - self.fx > self.fx - L_ else -1
             self.word = random.choice(("أحقق", "أستنتج", "أبحث عن أدلة") if self.lang == "ar" else
                                       ("Investigating", "Deducing", "Sleuthing"))
-            if user and not self.audio.playing:
-                self.music_cmd("play", 9, quiet=True)
+        if user:
+            self.anime_theme(kind)
         self.stat("anime")
+
+    def anime_theme(self, kind):
+        """User-picked anime move -> play its real theme song on YouTube (or our own detective tune)."""
+        if self.cfg.get("anime_yt", True):
+            if self.cooldown("anime_yt", 90):
+                opts = ANIME_THEME.get(kind, (0,))
+                ar_first = [i for i in opts if "شارة" in ANIME_SONGS[i][1]]
+                i = random.choice(ar_first if ar_first and self.lang == "ar" and random.random() < .5 else opts)
+                self.play_youtube(ANIME_SONGS[i][2], quiet=True)
+        elif kind == "detective" and not self.audio.playing:
+            self.music_cmd("play", 9, quiet=True)
 
     def anime_step(self, dt, mx, my, pose):
         a = self.anime
@@ -6108,6 +6227,7 @@ class Clawd:
         check("windows_lbl", "windows")
         check("mischief_lbl", "mischief")
         check("deskfx_lbl", "desk_fx")
+        check("animeyt_lbl", "anime_yt")
         check("smart_lbl", "smart")
         check("remind_lbl", "reminders")
         check("workout_lbl", "workout")
@@ -6295,6 +6415,17 @@ class Clawd:
 
         mu = tk.Menu(m, tearoff=0)
         mu.add_command(label="▶  " + tr("yt"), command=self.ask_youtube)
+        asm = tk.Menu(mu, tearoff=0)
+        for f in self.local_music()[:25]:
+            asm.add_command(label="♫  " + os.path.splitext(os.path.basename(f))[0][:48],
+                                   command=lambda f=f: self.play_local(f))
+        if self.local_music():
+            asm.add_separator()
+        for en, ar, q in ANIME_SONGS:
+            asm.add_command(label="▶  " + (ar if self.lang == "ar" else en), command=lambda q=q: self.play_youtube(q))
+        asm.add_separator()
+        asm.add_command(label="📁  " + tr("music_dir"), command=lambda: os.startfile(MUSIC_DIR))
+        mu.add_cascade(label="🎌  " + tr("an_songs"), menu=asm)
         mu.add_separator()
         playing = self.audio.playing[1] if self.audio.playing and self.audio.playing[0] == "track" else None
         for i, nm in enumerate(T["tracks"][1 if self.lang == "ar" else 0]):
@@ -6376,6 +6507,17 @@ class Clawd:
                         ("detective", "🔍")):
             an.add_command(label=ic + "  " + tr("an_" + key), command=lambda k_=key: self.start_anime(k_, user=True))
         an.add_separator()
+        songs = tk.Menu(an, tearoff=0)
+        for f in self.local_music()[:25]:
+            songs.add_command(label="♫  " + os.path.splitext(os.path.basename(f))[0][:48],
+                                   command=lambda f=f: self.play_local(f))
+        if self.local_music():
+            songs.add_separator()
+        for en, ar, q in ANIME_SONGS:
+            songs.add_command(label="▶  " + (ar if self.lang == "ar" else en), command=lambda q=q: self.play_youtube(q))
+        songs.add_separator()
+        songs.add_command(label="📁  " + tr("music_dir"), command=lambda: os.startfile(MUSIC_DIR))
+        an.add_cascade(label="🎵  " + tr("an_songs"), menu=songs)
         an.add_command(label="🏴‍☠️  " + tr("an_mode"), command=lambda: self.set_persona("anime"))
         m.add_cascade(label=tr("anime"), menu=an)
 
