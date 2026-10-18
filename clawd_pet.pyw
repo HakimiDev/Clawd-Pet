@@ -54,7 +54,7 @@ try:
 except Exception:
     pygame = None
 
-APP, VERSION = "Clawd", "1.1.0"
+APP, VERSION = "Clawd", "1.2.0"
 ORANGE, BLACK, KEY, CREAM = "#D97757", "#141414", "#ff00fe", "#F4EFE8"
 HOME = os.path.expanduser("~")
 FROZEN = getattr(sys, "frozen", False)
@@ -113,8 +113,26 @@ FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "clau
 DEFAULT_CFG = dict(scale=1.0, lang="auto", sound=True, talk=True, sfx_vol=0.7, music_vol=0.45, ask_rate="normal",
                    follow=True, climb=True, windows=True, fly=True, smart=True, reminders=True, provider="anthropic",
                    brains={}, trust=[], first_run=True, name="", memory=[], stats={}, focus_guard=True,
-                   workout=True, asked_name=False)
+                   workout=True, asked_name=False, personality="balanced", mischief=True, desk_fx=True)
 ASK_RATES = {"often": (25, 50), "normal": (60, 120), "rare": (180, 360), "off": None}
+PERSONAS = {  # multipliers used when he decides what to do next
+    "balanced": dict(speed=1.0, naughty=1.0, lazy=1.0, social=1.0),
+    "naughty": dict(speed=1.15, naughty=3.2, lazy=.6, social=1.1),
+    "lazy": dict(speed=.7, naughty=.5, lazy=3.0, social=.8),
+    "hyper": dict(speed=1.5, naughty=1.6, lazy=.3, social=1.5),
+    "sweet": dict(speed=.95, naughty=.3, lazy=1.0, social=2.4),
+}
+PERSONA_DESC = {
+    "balanced": "",
+    "naughty": "The user set your personality to NAUGHTY: a mischievous prankster - you tease, plot harmless pranks, "
+               "kick windows and laugh evilly (but you're still helpful). ",
+    "lazy": "The user set your personality to LAZY: sleepy, sighing, wants naps, does the minimum - but still answers "
+            "correctly. ",
+    "hyper": "The user set your personality to HYPER: SUPER excited, energetic, fast-talking, lots of exclamation marks. ",
+    "sweet": "The user set your personality to SWEET: extra kind, caring and encouraging, gives little compliments. ",
+}
+DOODLES = (["Clawd was here", "hi {n}!", "<3", "ship it!", "I \u2665 cookies", "{n} rocks!", "404: bug not found", "LGTM \u2713"],
+           ["\u0643\u0644\u0648\u062f \u0645\u0631\u0651 \u0645\u0646 \u0647\u0646\u0627", "\u0623\u0647\u0644\u0627\u064b {n}!", "<3", "\u0627\u0646\u0634\u0631\u0647\u0627!", "\u0623\u062d\u0628 \u0627\u0644\u0643\u0639\u0643 \u2665", "{n} \u0623\u0633\u0637\u0648\u0631\u0629!", "\u062e\u0637\u0623 404"])
 
 # ============================================================== text (English / Arabic)
 T = {
@@ -198,6 +216,24 @@ T = {
                 "Happy Hop", "Workout Pump", "Lullaby"),
                ("إيقاع كلود", "حفلة البكسل", "قيلولة هادئة", "أحلام الصحراء", "رحلة سينث", "معركة الزعيم",
                 "قفزة سعيدة", "حماس التمرين", "تهويدة")),
+    "persona_lbl": ("Personality", "الشخصية"),
+    "personas": (("Balanced", "Naughty", "Lazy", "Hyper", "Sweet"), ("متوازن", "مشاغب", "كسول", "نشيط جداً", "حنون")),
+    "mischief_lbl": ("Mischief: he may kick and shove my windows", "مشاغبة: يقدر يركل ويحرك نوافذي"),
+    "deskfx_lbl": ("Desktop effects (footprints, cracks, confetti, doodles)", "تأثيرات سطح المكتب (آثار أقدام، شقوق، قصاصات، رسومات)"),
+    "mischief": ("Mischief & effects", "مشاغبة وتأثيرات"),
+    "kick_win": ("Kick a window", "اركل نافذة"), "hide_win": ("Hide behind a window", "تخبّى ورا نافذة"),
+    "laser": ("Laser eyes", "عيون ليزر"), "doodle": ("Doodle on the screen", "ارسم على الشاشة"),
+    "smash": ("Crack the screen (fake!)", "اكسر الشاشة (مزحة!)"), "glitch": ("Glitch the screen", "خرّب الشاشة شوي"),
+    "build": ("Build something (engineer mode)", "ابنِ شيئاً (وضع المهندس)"), "mine": ("Go mining", "روح عدّن ونقّب"),
+    "stomp": ("Stomp on this window", "دبدب على هذه النافذة"), "undo_win": ("Put my windows back", "أرجع نوافذي لمكانها"),
+    "confetti": ("Confetti party!", "حفلة قصاصات ملونة!"),
+    "ttt": ("Tic-tac-toe", "إكس أو"), "seek": ("Hide and seek (find me!)", "الغميضة (دوّر علي!)"),
+    "tag": ("Catch me!", "امسكني!"), "guess": ("Guess the number", "خمّن الرقم"),
+    "fetch": ("Fetch (throw the ball to me)", "هات الكرة (ارمِ لي الكرة)"),
+    "ttt_title": ("Clawd - Tic-tac-toe", "كلود - إكس أو"), "ttt_you": ("You are X. Your turn!", "أنت X. دورك!"),
+    "ttt_thinking": ("Clawd is thinking...", "كلود يفكر..."), "ttt_again": ("Play again", "العب مرة ثانية"),
+    "ttt_won": ("You won!", "فزت!"), "ttt_lost": ("Clawd won!", "كلود فاز!"), "ttt_drew": ("Draw!", "تعادل!"),
+    "ttt_score": ("You {a}  :  {b} Clawd", "أنت {a}  :  {b} كلود"),
 }
 
 L = {  # random lines (English, Arabic)
@@ -367,6 +403,76 @@ L = {  # random lines (English, Arabic)
     "rps_lose": (["Noooo! You win{c}.", "Rematch! I demand a rematch!"], ["لااا! أنت فزت{c}.", "إعادة! أطالب بإعادة!"]),
     "rps_tie": (["Tie! Great minds think alike."], ["تعادل! العقول الكبيرة تتشابه."]),
     "rps_ask": (["Rock, paper or scissors? Type it in chat!"], ["حجر، ورقة أو مقص؟ اكتبها في المحادثة!"]),
+    "kick_windup": (["Hehe... watch this.", "This window looks kickable.", "Hold my cookie.", "Sparta mode: ON"],
+                    ["هههه... شوف هذا.", "هالنافذة شكلها تنركل.", "امسك كعكتي.", "وضع إسبرطة: مفعّل"]),
+    "kick_hit": (["HIYAA!", "Ka-POW!", "Get outta here, window!", "Yeet!", "Refactored its position."],
+                 ["هيااا!", "بووم!", "برا يا نافذة!", "طيييير!", "أعدت ترتيب مكانها."]),
+    "kick_miss": (["...I meant to do that.", "Missed. Nobody saw that.", "Wind resistance. Obviously."],
+                  ["...كنت قاصد.", "طاشت. محد شاف شي.", "مقاومة الهواء طبعاً."]),
+    "laugh": (["Hehehehe!", "MWAHAHA!", "Hehe, worth it.", "*evil giggle*"], ["هههههههه!", "مواهاهاها!", "هههه، يستاهل.", "*ضحكة شريرة*"]),
+    "hide": (["Shh... I'm not here.", "You can't see me.", "*hides*", "Ninja mode."], ["ششش... أنا مو هنا.", "ما تشوفني.", "*يتخبى*", "وضع النينجا."]),
+    "boo": (["BOO!", "Peekaboo!", "You found me!"], ["بخ!", "بيكابو!", "لقيتني!"]),
+    "floor_gone": (["Hey! Who took my floor?!", "My window! Noooo!"], ["هيه! مين شال أرضي؟!", "نافذتي! لااا!"]),
+    "new_win": (["Ooh, a new window: {t}", "What's this? {t}!", "New window! Can I stand on it?"],
+                ["أوه، نافذة جديدة: {t}", "شو هذا؟ {t}!", "نافذة جديدة! أقدر أوقف عليها؟"]),
+    "stomp": (["STOMP STOMP STOMP!", "Earthquake!", "Is this thing on?"], ["دبدبة!", "زلزال!", "هذي شغالة؟"]),
+    "laser": (["Pew pew pew!", "LASER EYES ACTIVATED.", "I'm a cat now. Run, cursor!"], ["بيو بيو بيو!", "تفعيل عيون الليزر.", "صرت قطوة. اهرب يا مؤشر!"]),
+    "doodle": (["Art time!", "Masterpiece incoming.", "Don't worry, it's washable."], ["وقت الفن!", "تحفة فنية قادمة.", "لا تخاف، تنمسح."]),
+    "smash": (["Oops.", "...that wasn't me.", "Uh oh. I can fix this!"], ["أوبس.", "...مو أنا.", "أوه لا. أقدر أصلحها!"]),
+    "tape": (["Fixed it! With tape. Ship it!", "Good as new. Mostly.", "Duct tape: the senior engineer's tool."],
+             ["صلحتها! بلاصق. انشرها!", "مثل الجديدة. تقريباً.", "اللاصق: أداة كبار المهندسين."]),
+    "glitch": (["I didn't touch anything!", "Have you tried turning it off and on?", "That's a feature, not a bug."],
+               ["ما لمست شي!", "جربت تطفيه وتشغله؟", "هذي ميزة مو خطأ."]),
+    "crack": (["Did I just break your screen?!", "Oops... that's gonna leave a mark."], ["كسرت شاشتك؟!", "أوبس... هذي بتترك أثر."]),
+    "built": (["Shipped! Zero bugs. Probably.", "Look what I built!", "LGTM, merging."], ["تم النشر! بدون أخطاء... على الأغلب.", "شوف وش بنيت!", "تمام، دمجته."]),
+    "collapse": (["...it was a prototype.", "Tech debt strikes again.", "Who wrote this?! Oh. Me."],
+                 ["...كان نموذج أولي.", "الديون التقنية ضربت مرة ثانية.", "مين كتب هذا؟! أوه. أنا."]),
+    "found_gem": (["A gem! Shiny!", "Diamond! I'm rich!"], ["جوهرة! تلمع!", "ألماس! صرت غني!"]),
+    "found_bug": (["Found a bug! Filing an issue.", "Ew, a bug. Squashed."], ["لقيت خطأ! أسجل بلاغ.", "إيه، حشرة برمجية. سحقتها."]),
+    "found_coin": (["Mined 0.00000001 Bitcoin! Retiring now.", "A token! Only 199,999 to go."], ["عدّنت 0.00000001 بيتكوين! بتقاعد.", "توكن! باقي 199,999."]),
+    "found_cookie": (["A COOKIE! Best mine ever!"], ["كعكة! أفضل منجم!"]),
+    "persona_set": (["Personality: {p}! Let's go.", "Okay, {p} mode on!"], ["الشخصية: {p}! يلا.", "تمام، وضع {p} مفعّل!"]),
+    "undo_win": (["Okay okay, windows back where they were.", "Fine, I put them back. Spoilsport."],
+                 ["طيب طيب، رجعت النوافذ مكانها.", "خلاص رجعتها. ما تحب المزح."]),
+    "mischief_off": (["Mischief is off in Settings. I'm a good boy now."], ["المشاغبة مطفأة في الإعدادات. صرت مؤدب."]),
+    "fx_off": (["Turn on desktop effects in Settings first!"], ["فعّل تأثيرات سطح المكتب من الإعدادات أولاً!"]),
+    "no_kick": (["No kickable windows around. Lucky them."], ["ما في نوافذ أقدر أركلها. محظوظين."]),
+    "ball_hit": (["OW! My head!", "Hey! Watch it!", "Bonk."], ["آي! راسي!", "هيه! انتبه!", "بونك."]),
+    "header": (["Header!", "Nice pass!", "Boing!"], ["ضربة رأس!", "تمريرة حلوة!", "بوينغ!"]),
+    "fetch": (["Catch!", "Your turn!", "Coming at you!"], ["امسك!", "دورك!", "جايتك!"]),
+    "fetch_hint": (["Throw the ball! I'll pass it back - catch it!"], ["ارمِ الكرة! بمررها لك - امسكها!"]),
+    "fetch_n": (["Nice catch! {n} in a row!", "{n}! You're good at this."], ["مسكة حلوة! {n} على التوالي!", "{n}! أنت شاطر."]),
+    "seek_start": (["Hide and seek! Close your eyes... 3... 2... 1... Then find me with the mouse!"],
+                   ["غميضة! غمّض عيونك... 3... 2... 1... وبعدين دوّر علي بالماوس!"]),
+    "seek_found": (["You found me in {t}s!", "Noooo! Found in {t} seconds."], ["لقيتني في {t} ثانية!", "لااا! لقيتني بعد {t} ثانية."]),
+    "seek_win": (["I win! I was here the whole time!", "Too good at hiding. Hehe."], ["فزت! كنت هنا طول الوقت!", "أنا محترف تخبي. هههه."]),
+    "tag_start": (["Catch me if you can! Click me within 25 seconds!", "Tag! You're it! Click me!"],
+                  ["امسكني إذا تقدر! اضغط علي خلال 25 ثانية!", "يلا امسكني! اضغط علي!"]),
+    "tag_caught": (["You got me in {t}s!", "Caught! {t} seconds. Respect."], ["مسكتني في {t} ثانية!", "انمسكت! {t} ثانية. احترام."]),
+    "tag_win": (["Too slow! I win!", "Nyah nyah, can't catch me!"], ["بطيء! أنا فزت!", "ما تقدر تمسكني!"]),
+    "taunt": (["Nope!", "Too slow!", "Hehe!", "Missed me!"], ["لا!", "بطيء!", "هههه!", "فاتتك!"]),
+    "guess_start": (["I'm thinking of a number from 1 to 100. Guess it in the chat!"], ["أفكر برقم من 1 إلى 100. خمّنه في المحادثة!"]),
+    "guess_hi": (["Higher!", "Nope, go higher."], ["أعلى!", "لا، أكبر."]),
+    "guess_lo": (["Lower!", "Too high, go lower."], ["أقل!", "كبير، أصغر."]),
+    "guess_ok": (["YES! It was {n}! You got it in {t} tries{c}!"], ["صح! كان {n}! خمنته في {t} محاولات{c}!"]),
+    "ttt_start": (["X goes first. Good luck, you'll need it.", "Tic-tac-toe! I never lose. Mostly."],
+                  ["أنت أول. بالتوفيق، بتحتاجه.", "إكس أو! أنا ما أخسر. غالباً."]),
+    "ttt_win": (["Three in a row! Clawd wins!", "GG EZ. Rematch?"], ["ثلاثة على خط! كلود فاز!", "سهلة. نعيد؟"]),
+    "ttt_lose": (["Nooo! You beat me{c}!", "Wait... how?! Rematch!"], ["لااا! غلبتني{c}!", "لحظة... كيف؟! نعيد!"]),
+    "ttt_draw": (["Draw! Great minds think alike."], ["تعادل! العقول الكبيرة تتشابه."]),
+    "games_list": (["Games: tic-tac-toe, hide and seek, catch me, guess the number, fetch, rock-paper-scissors. Pick one!"],
+                   ["الألعاب: إكس أو، الغميضة، امسكني، خمّن الرقم، هات الكرة، حجر ورقة مقص. اختر وحدة!"]),
+    "confetti": (["PARTY TIME!", "Woohoo!"], ["وقت الحفلة!", "ووهوو!"]),
+    "lounge": (["Ahh... this is the life.", "*sips cookie juice*"], ["آه... هذي هي الحياة.", "*يشرب عصير كعك*"]),
+    "naughty_q": (["I'm plotting something. Don't look.", "Your windows look... kickable.", "I licked your cursor.",
+                   "I may or may not have hidden a bug in your code."],
+                  ["أخطط لشي. لا تطالع.", "نوافذك شكلها... تنركل.", "لحست الماوس حقك.", "يمكن خبيت خطأ في كودك. ويمكن لا."]),
+    "lazy_q": (["Five more minutes...", "Effort is overrated.", "I'm conserving tokens.", "Can someone else do it?"],
+               ["خمس دقايق بس...", "التعب مبالغ فيه.", "أوفر توكنز.", "أحد غيري يسويها؟"]),
+    "hyper_q": (["LET'S GOOO!", "I had 47 cookies!", "Can't stop won't stop!", "Faster! FASTER!"],
+                ["يلااااا!", "أكلت 47 كعكة!", "ما أوقف!", "أسرع! أسرع!"]),
+    "sweet_q": (["You're doing great{c}.", "I'm proud of you{c}.", "Hug? *hugs cursor*", "Don't forget to smile today."],
+                ["أنت رائع{c}.", "فخور فيك{c}.", "حضن؟ *يحضن الماوس*", "لا تنسى تبتسم اليوم."]),
     "remembered": (["Got it, I'll remember that!"], ["تمام، سأتذكر هذا!"]),
     "forgot": (["Okay, forgotten. *pixel amnesia*"], ["تمام، نسيت. *فقدان ذاكرة بكسلي*"]),
     "typing": (["You type fast! Let me code too.", "Keyboard warrior! I'll help."], ["تكتب بسرعة! خليني أبرمج معك.", "محارب الكيبورد! سأساعدك."]),
@@ -586,6 +692,21 @@ def top_visible(h, x, y):
     return bool(hit) and user32.GetAncestor(hit, 2) == h
 
 
+user32.IsZoomed.argtypes = [wt.HWND]
+user32.SetWindowPos.argtypes = [wt.HWND, wt.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wt.UINT]
+user32.SetWindowLongW.argtypes = [wt.HWND, ctypes.c_int, ctypes.c_long]
+
+
+def win_pos(h):
+    r = wt.RECT()
+    user32.GetWindowRect(h, ctypes.byref(r))
+    return r.left, r.top, r.right, r.bottom
+
+
+def move_win(h, x, y):
+    user32.SetWindowPos(h, None, int(x), int(y), 0, 0, 0x0001 | 0x0004 | 0x0010)  # no size / z-order / activate
+
+
 def idle_seconds():
     lii = LASTINPUTINFO(cbSize=ctypes.sizeof(LASTINPUTINFO))
     user32.GetLastInputInfo(ctypes.byref(lii))
@@ -715,6 +836,11 @@ SFX = {
     "huff": ([("noise", .07)], "square", .1), "boing": ([((220, 700), .09), ((700, 330), .12)], "sine", .4),
     "whoosh": ([("noise", .16)], "square", .07), "flop": ([((160, 70), .1), ("noise", .04)], "sine", .55),
     "win": ([(784, .08), (988, .08), (1175, .08), (1568, .25)], "square", .16),
+    "crash": ([("noise", .22), ((900, 200), .14), ("noise", .1)], "square", .22),
+    "zap": ([((1800, 600), .07)], "square", .1), "tok": ([((900, 600), .03), ("noise", .01)], "sine", .45),
+    "laugh": ([(660, .06), (0, .03), (620, .06), (0, .03), (580, .06), (0, .03), (540, .1)], "square", .14),
+    "clink": ([((1500, 1100), .04), ("noise", .015)], "sine", .4), "poof": ([("noise", .12)], "square", .1),
+    "static": ([("noise", .35)], "square", .05), "boom": ([((120, 40), .22), ("noise", .06)], "sine", .7),
 }
 SCALES = {"major": [0, 2, 4, 5, 7, 9, 11], "minor": [0, 2, 3, 5, 7, 8, 10], "hijaz": [0, 1, 4, 5, 7, 8, 10]}
 # same order as T["tracks"]: bpm, root (midi), scale, chord degrees (one per bar), style, seed
@@ -1381,6 +1507,16 @@ class Clawd:
         self.typing_t = 0.0
         self.input_idle_prev = 0.0
         self.pose = {"legs": 0, "arms": "down", "eyes": "open", "bob": 0.0}
+        # v1.2: personality, mischief, hiding, games, desktop effects
+        self.kick, self.goto, self.work = None, None, None
+        self.wmove, self.win_orig = {}, {}
+        self.sink, self.hide_info = 0.0, None
+        self.recent = []
+        self.game = None
+        self.cursor_over, self.over_t = False, 0.0
+        self.last_kick_t, self.fetch_n = -9.0, 0
+        self.next_foot, self.foot_i = 0.0, 0
+        self.fxl = None
         today = time.strftime("%Y-%m-%d")
         if self.cfg["stats"].get("day") != today:
             self.cfg["stats"] = {"day": today, **{k: 0 for k in ("pets", "cookies", "throws", "workouts", "chats", "jokes")},
@@ -1422,6 +1558,11 @@ class Clawd:
         if not self.cfg["name"] and not self.cfg["asked_name"]:
             self.root.after(9000, self.ask_name)
         self.refresh_windows()
+        try:
+            self.fxl = FxLayer(self)
+            root.lift()
+        except Exception as e:  # noqa
+            self.log_error(e)
         self.tick()
 
     # ---------------------------------------------------------- config & i18n
@@ -1581,6 +1722,9 @@ class Clawd:
             self.bubble = None
 
     def quip(self):
+        pk = self.cfg.get("personality", "balanced")
+        if pk != "balanced" and random.random() < .45:
+            return self.sayl(pk + "_q")
         if self.happy < 30 and random.random() < .5:
             self.say(self.line("lonely"))
         elif self.energy < 20 and random.random() < .5:
@@ -1633,11 +1777,22 @@ class Clawd:
            "chase": (8, 8), "code": (6, 12), "stretch": (2.2, 2.2), "eat": (3.5, 3.5), "dizzy": (2.5, 2.5),
            "angry": (2, 2), "petted": (2, 2), "crouch": (.18, .18), "hang": (1.5, 4), "sneeze": (1.8, 1.8),
            "peek": (4, 7), "fly": (6, 14), "web": (60, 60), "moonwalk": (4, 4), "getup": (1.1, 1.1),
-           "slide": (6, 6), "wave": (1.6, 1.6), "look": (2.5, 4), "beg": (3, 3), "yawn": (1.6, 1.6), "proud": (2, 2)}
-    NEED_FLOOR = ("chase", "play", "peek", "moonwalk", "slide")   # need ground under the feet
-    NO_FLY = ("walk", "sleep", "chase", "play", "peek", "moonwalk", "slide", "getup")
+           "slide": (6, 6), "wave": (1.6, 1.6), "look": (2.5, 4), "beg": (3, 3), "yawn": (1.6, 1.6), "proud": (2, 2),
+           "hide": (9, 16), "laugh": (1.8, 1.8), "stomp": (2.4, 2.4), "laser": (2.6, 2.6), "doodle": (3.6, 3.6),
+           "lounge": (8, 15), "flee": (30, 30), "build": (7, 7), "mine": (7, 7), "smash": (3.4, 3.4)}
+    NEED_FLOOR = ("chase", "play", "peek", "moonwalk", "slide", "flee", "lounge", "build", "mine", "smash", "doodle")
+    NO_FLY = ("walk", "sleep", "chase", "play", "peek", "moonwalk", "slide", "getup", "flee", "lounge", "build", "mine",
+              "smash", "doodle", "hide", "stomp")
 
     def set_state(self, s, timer=None):
+        if self.state == "hide" and s != "hide":
+            self.hide_info = None
+            if self.game and self.game.get("kind") == "seek":
+                self.game = None
+        if self.state in ("build", "mine", "smash", "doodle") and s != self.state:
+            self.work = None
+        if s != "walk":
+            self.goto = None
         if self.state == "ask" and s != "ask" and self.ask_req:
             if self.ask_req.get("real"):
                 self.ask_req["deny"]()
@@ -1691,6 +1846,18 @@ class Clawd:
             self.sfx("yawn")
         elif s == "wave":
             self.sayl("wave")
+        elif s == "laugh":
+            self.sfx("laugh", .7)
+            if random.random() < .6:
+                self.sayl("laugh")
+        elif s == "lounge":
+            if random.random() < .5:
+                self.sayl("lounge")
+        elif s == "stomp":
+            self._stomp_n = 0
+            self.sayl("stomp")
+        elif s in ("laser", "doodle"):
+            self.sayl(s)
 
     def need_floor(self, fn):
         """Run fn now if standing on the floor, otherwise get down first and run it on landing."""
@@ -1707,6 +1874,7 @@ class Clawd:
         self.surf, self.plat = "air", None
         self.vx, self.vy = vx, vy
         self.spin = 0.0
+        self.sink = 0.0
         self.sqv -= 6
         self.sfx("jump")
 
@@ -1736,6 +1904,8 @@ class Clawd:
             s, t = self.chain
             self.chain, self._chain2 = self._chain2, None
             return self.set_state(s, t)
+        if self.game and self.game.get("kind") == "tag":
+            return self.need_floor(lambda: self.set_state("flee", 30))
         if self.surf == "fly":
             if self.fly_forever or self.stay:
                 self.state, self.timer = "fly", 5
@@ -1783,8 +1953,35 @@ class Clawd:
             w["fly"] = 1.5
         if self.ball:
             w["play"] = 8
+        # personality shapes what he likes to do; recent picks are less likely (never boring)
+        p = self.persona()
+        for key, f in (("walk", p["speed"]), ("jump", p["speed"]), ("dance", p["speed"] ** .5), ("sleep", p["lazy"]),
+                       ("yawn", p["lazy"]), ("idle", p["lazy"] ** .5), ("exercise", 1 / p["lazy"]), ("quip", p["social"] ** .5)):
+            w[key] *= f
+        w["lounge"] = .7 * p["lazy"]
+        w["wave"] = .3 * p["social"]
+        if self.cfg["desk_fx"]:
+            w.update(doodle=.5 * p["naughty"] ** .5, laser=.3 * p["naughty"], build=.6 * p["speed"], mine=.6 * p["speed"],
+                     smash=.15 * p["naughty"], glitch=.12 * p["naughty"])
+        if self.cfg["windows"]:
+            w["hide"] = .9 * p["naughty"] ** .5 + (.8 if self.plat else 0)
+            if self.cfg["mischief"]:
+                w["kick"] = 1.1 * p["naughty"]
+                if self.plat:
+                    w["stomp"] = .6 * p["naughty"]
+        for r_ in self.recent:
+            if r_ in w:
+                w[r_] *= .25
         s = random.choices(list(w), weights=list(w.values()))[0]
-        if s == "quip":
+        self.recent = (self.recent + [s])[-4:]
+        if s == "kick":
+            if not self.go_kick():
+                self.set_state("walk")
+        elif s == "hide":
+            self.go_hide()
+        elif s in ("laser", "doodle", "build", "mine", "smash", "glitch"):
+            self.start_trick(s)
+        elif s == "quip":
             self.set_state("idle")
             self.quip()
         elif s == "joke":
@@ -1974,7 +2171,7 @@ class Clawd:
         self.dir = -1 if self.fx - L_ < R_ - self.fx else 1
         self.want_climb = True
 
-    def try_hop(self, user=False):
+    def try_hop(self, user=False, only=None, then=None):
         if user:
             self.stay = False
             if self.surf != "floor":
@@ -1987,7 +2184,7 @@ class Clawd:
         cands = []
         for h, r, _, _ in self.windows:
             top = r[1]
-            if h == self.plat or top <= T_ + 6 or top >= B_ - 20:
+            if h == self.plat or top <= T_ + 6 or top >= B_ - 20 or (only and h != only):
                 continue
             rise = self.fy - top
             if not (-400 * k < rise < 560 * k):
@@ -2012,6 +2209,8 @@ class Clawd:
         self.pending_jump = ((tx - self.fx) / t, vy0)
         self.dir = 1 if tx > self.fx else -1
         self.set_state("crouch")
+        if then:
+            self.after_land = then
         if random.random() < .35:
             self.say(self.line("hop"))
         return True
@@ -2108,6 +2307,10 @@ class Clawd:
             self.was_flying = self.surf == "fly"
             self.after_land = self.chain = None
             self.ex, self.routine = None, []
+            self.hide_info = self.kick = self.goto = self.work = None
+            self.sink = 0.0
+            if self.game and self.game.get("kind") in ("tag", "seek"):
+                self.game_won_by_user()
             self.state, self.surf, self.plat = "drag", "air", None
             self.spin = 0.0
             self.say(self.line("drag"))
@@ -2160,6 +2363,10 @@ class Clawd:
 
     def single_click(self):
         self.click_job = None
+        if self.game and self.game.get("kind") == "tag":
+            return self.tag_caught()
+        if self.game and self.game.get("kind") == "seek" and self.state == "hide":
+            return self.seek_found()
         if self.pending_explain and self.time - self.pending_explain[1] < 45:
             text, self.pending_explain = self.pending_explain[0], None
             return self.clip_tool("explain", text)
@@ -2269,7 +2476,7 @@ class Clawd:
             "You are Clawd, the tiny orange pixel-art mascot of Claude Code, living as a desktop pet on the user's Windows "
             "PC. You are a small but genuinely capable AI agent: you look things up, run tools, and take actions on the PC. "
             "Personality: playful, witty, warm, a bit dramatic, loves cookies and dancing - but sharp, accurate and helpful "
-            "first. " + who + "\n\n" + mems +
+            "first. " + PERSONA_DESC.get(self.cfg.get("personality"), "") + who + "\n\n" + mems +
             "Always answer with ONE JSON object and nothing else:\n"
             '{"say": "<speech-bubble reply>", "actions": []}\n\n'
             "\"say\": short and natural (1-3 sentences, under 60 words) unless the user asks for an explanation, a text or "
@@ -2307,7 +2514,12 @@ class Clawd:
             '{"type":"stay","on":true} - stop moving around (false = free again)\n'
             '{"type":"come"} - come to the mouse cursor   {"type":"fly"} - fly around   {"type":"land"}\n'
             '{"type":"password","length":16}  {"type":"screenshot"}  {"type":"lock_pc"}  {"type":"hide"}\n'
-            '{"type":"joke"}  {"type":"coin"}  {"type":"dice"}\n\n'
+            '{"type":"joke"}  {"type":"coin"}  {"type":"dice"}\n'
+            '{"type":"prank","name":"kick_window|hide|laser|doodle|smash|glitch|build|mine|stomp|confetti|undo"} - '
+            'desktop mischief and effects: kick a window across the screen, hide behind a window, laser eyes, doodle on '
+            'the screen, fake screen crack + tape, glitch, build a little brick tower, mine for treasure, confetti\n'
+            '{"type":"game","name":"tictactoe|hide_seek|tag|guess|fetch|rps"} - play a game with the user\n'
+            '{"type":"personality","name":"balanced|naughty|lazy|hyper|sweet"} - only when the user asks\n\n'
             f"Context: {self.context_str()}.")
 
     def handle_text(self, text):
@@ -2320,6 +2532,11 @@ class Clawd:
             self.chat_log.append(("bot", self.line("name_set", n=text.strip(" .!"))))
             self.set_name(text.strip(" .!"))
             return self.render_chat()
+        if self.game and self.game.get("kind") == "guess":
+            g = re.fullmatch(r"\s*(\d{1,3})\s*", text.translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")))
+            if g:
+                self.guess_input(int(g.group(1)))
+                return self.render_chat()
         quick = self.offline(text, strict=self.brain.ready())
         if quick:
             self.deliver(*quick, direct=True)
@@ -2614,6 +2831,28 @@ class Clawd:
             self.stay = False
             self.force_flip = True
             self.need_floor(lambda: self.set_state("jump"))
+        elif t == "prank":
+            n = a.get("name")
+            if n == "kick_window":
+                self.go_kick(user=True)
+            elif n == "hide":
+                self.go_hide(user=True)
+            elif n == "stomp":
+                self.stay = False
+                self.set_state("stomp")
+            elif n == "confetti":
+                self.party()
+            elif n == "undo":
+                self.undo_windows()
+            elif n in ("laser", "doodle", "smash", "glitch", "build", "mine"):
+                self.start_trick(n, user=True)
+        elif t == "game":
+            fn = {"tictactoe": self.game_ttt, "hide_seek": self.game_seek, "tag": self.game_tag, "guess": self.game_guess,
+                  "fetch": self.game_fetch, "rps": self.rps}.get(a.get("name"))
+            if fn:
+                fn()
+        elif t == "personality":
+            self.set_persona(a.get("name"))
 
     # ---------- small features used by commands / menu
     def feed(self):
@@ -2844,7 +3083,7 @@ class Clawd:
             return self.line("volume"), [{"type": "media", "cmd": "voldown"}] * 5
         if re.fullmatch(r"mute|اكتم الصوت|كتم الصوت", low):
             return "", [{"type": "media", "cmd": "mute"}]
-        if re.fullmatch(r"hide|go away|اختف|اختفي|روح", low):
+        if re.fullmatch(r"go away|hide yourself|disappear|اختف|اختفي|روح", low):
             return "", [{"type": "hide"}]
         if re.fullmatch(r"sneeze|اعطس", low):
             return "", [{"type": "animate", "name": "sneeze"}]
@@ -2925,8 +3164,38 @@ class Clawd:
             return "", [{"type": "flip"}]
         if re.fullmatch(r"(spider|web|hang|spider ?web)|عنكبوت|تدلى|خيط العنكبوت", low):
             return "", [{"type": "animate", "name": "web"}]
-        if re.fullmatch(r"(peek|peekaboo|hide and seek)|غميضة|استخبى", low):
+        if re.fullmatch(r"(play )?hide (and|&|n) seek|(لعبة )?(ال)?غميضة|نلعب غميضة|استغماية|دور علي", low):
+            return "", [{"type": "game", "name": "hide_seek"}]
+        if re.fullmatch(r"(peek|peekaboo)|بيكابو", low):
             return "", [{"type": "animate", "name": "peek"}]
+        if re.fullmatch(r"(play )?(tic ?tac ?toe|x ?o)|اكس او|إكس أو|اكس أو|نلعب اكس او|xo", low):
+            return "", [{"type": "game", "name": "tictactoe"}]
+        if re.fullmatch(r"(play )?(catch me|tag|chase me)( if you can)?|امسكني|الحقني|لعبة المطاردة", low):
+            return "", [{"type": "game", "name": "tag"}]
+        if re.fullmatch(r"(play )?guess( the| a)? number|خمن الرقم|لعبة الارقام|لعبة الأرقام", low):
+            return "", [{"type": "game", "name": "guess"}]
+        if re.fullmatch(r"(play )?fetch|جيب الكرة|هات الكرة", low):
+            return "", [{"type": "game", "name": "fetch"}]
+        if re.fullmatch(r"games|(let'?s )?play a game|العاب|ألعاب|نلعب لعبة|العب معي|وش الالعاب", low):
+            return self.line("games_list"), []
+        pranks = {"kick_window": r"kick( a| the| that)?( window)?|اركل( ال)?نافذة|اركل|اضرب النافذة|شوت",
+                  "hide": r"hide( behind a window)?|go hide|تخبى|تخبا|تخبأ|اختبئ|استخبى|تخبى ورا النافذة",
+                  "laser": r"laser( eyes)?|pew pew|ليزر|عيون ليزر", "doodle": r"draw( something| on the screen)?|doodle|ارسم( شي| شيء| على الشاشة)?",
+                  "smash": r"(break|crack|smash) (the |my )?screen|اكسر الشاشة|كسر الشاشة|اكسر الشاشه",
+                  "glitch": r"glitch|break something|خرب( شي| شيء)?|خرّب شي|خرب الشاشة",
+                  "build": r"build( something)?|construct|engineer|ابن|ابني|ابني شي|هندس|ابن شيء|ابنِ شيء",
+                  "mine": r"mine|go mining|dig|mining|عدن|تعدين|نقب|احفر|روح نقب|عدّن",
+                  "stomp": r"stomp|دبدب|دبدبة", "confetti": r"confetti|party|celebrate|احتفل|حفلة|احتفال",
+                  "undo": r"(put|move) (my |the )?windows back|undo|رجع النوافذ|ارجع النوافذ|رجّع النوافذ"}
+        for name, rx in pranks.items():
+            if re.fullmatch(rx, low):
+                return "", [{"type": "prank", "name": name}]
+        m = re.fullmatch(r"be (naughty|lazy|hyper|sweet|normal|balanced)|(?:كن|صير|خليك) (مشاغب|كسول|نشيط|حنون|لطيف|طبيعي|عادي)", low)
+        if m:
+            w = m.group(1) or m.group(2)
+            key = {"مشاغب": "naughty", "كسول": "lazy", "نشيط": "hyper", "حنون": "sweet", "لطيف": "sweet", "طبيعي": "balanced",
+                   "عادي": "balanced", "normal": "balanced"}.get(w, w)
+            return "", [{"type": "personality", "name": key}]
         if re.fullmatch(r"(code|program|work)|برمج|اشتغل", low):
             return "", [{"type": "animate", "name": "code"}]
         if re.fullmatch(r"(climb|تسلق)", low):
@@ -3055,7 +3324,8 @@ class Clawd:
     # ---------------------------------------------------------- smart senses
     def senses(self, dt):
         s = self.state
-        busy = s in ("drag", "fall", "jump", "ask", "exercise", "eat", "slide", "getup")
+        busy = s in ("drag", "fall", "jump", "ask", "exercise", "eat", "slide", "getup", "hide", "flee", "build", "mine",
+                     "smash", "doodle", "laser", "stomp", "laugh")
         self.energy = max(0, min(100, self.energy + dt * (0.6 if s == "sleep" else -0.18 if s == "exercise" else -0.035)))
         self.hunger = min(100, self.hunger + dt * (0.012 if s != "exercise" else 0.05))
         self.happy = max(0, self.happy - dt * (0.02 + (0.02 if self.hunger > 80 else 0)))
@@ -3185,9 +3455,26 @@ class Clawd:
 
     def refresh_windows(self):
         try:
-            self.windows = list_windows()
+            new = list_windows()
         except Exception:
-            self.windows = []
+            new = []
+        old, self.windows = self.windows, new
+        if not old or not self.cfg["smart"] or self.state not in ("idle", "walk", "look", "hang", "think") \
+                or self.surf in ("air", "fly") or self.game:
+            return
+        known = {w_[0] for w_ in old}
+        k = self.k
+        for h, r, title, _ in new[:2]:   # a window just opened on top -> notice it
+            if h not in known and r[2] - r[0] > 320 * k and r[3] - r[1] > 220 * k and self.cooldown("newwin", 45):
+                if random.random() < .45:
+                    return
+                t = title if len(title) < 30 else title[:28] + "..."
+                self.set_state("look", 2.5)
+                self.eyes_override = ("big", self.time + .8)
+                self.say(self.line("new_win", t=t))
+                if self.persona()["naughty"] > 1.5 and self.cfg["mischief"] and random.random() < .5:
+                    self.root.after(2300, lambda h=h: self.go_kick(only=h) if self.state in ("idle", "look", "walk") else None)
+                return
 
     # ---------------------------------------------------------- physics & behaviour (every frame)
     @staticmethod
@@ -3235,6 +3522,9 @@ class Clawd:
                 fn()
             self.hk[vk] = down
         if self.hidden:
+            if self.fxl and self.fxl.items:
+                self.fxl.items, self.fxl.beam = [], None
+                self.fxl.step(0)
             n = len(self.timers)
             self.check_timers()
             if len(self.timers) < n:
@@ -3268,6 +3558,7 @@ class Clawd:
         m_ = 14 * k
         over = bool(pb) and self.wx + pb[0] - m_ <= mx <= self.wx + pb[2] + m_ \
             and self.wy + pb[1] - m_ <= my <= self.wy + pb[3] + m_
+        self.cursor_over = over
         if over and not self.drag:
             if self.time >= self.hover_until and s in ("walk", "fly", "play", "moonwalk") and self.cooldown("notice", 25) \
                     and random.random() < .35:
@@ -3285,6 +3576,11 @@ class Clawd:
 
         self.behave(dt, mx, my)
         self.update_ball(dt)
+        self.step_windows(dt)
+        if self.fxl:
+            if self.state != "laser":
+                self.fxl.beam = None
+            self.fxl.step(dt)
 
         # smooth body rotation: free tumbling in the air, eased leaning everywhere else
         if self.surf == "air" and self.state != "drag" and self.spin:
@@ -3446,16 +3742,29 @@ class Clawd:
                 self.tumble += abs(self.spin * dt)
             pose.update(arms="up" if s == "fall" or self.vy < 0 else "wave", eyes="happy" if s == "jump" else "x",
                         legs=1 + int(self.time * 10) % 2)
+            kk = self.kick
+            if kk and not kk["done"]:   # flying kick at a window's edge
+                d = kk["dir"]
+                pose.update(eyes="angry", arms="up", legs=0,
+                            extra=[(15.5, 5.6, 19.8, 6.9, ORANGE)] if d > 0 else [(-3.8, 5.6, .5, 6.9, ORANGE)])
+                front = self.fx + d * self.PW * .5
+                if (front - kk["ex"]) * d >= -16 * k and abs(self.fy - self.PH / 2 - kk["cy"]) < self.PH * 1.4:
+                    self.do_kick()
+            elif kk:
+                pose.update(eyes="happy", arms="wave" if int(self.time * 8) % 2 else "up")
             if self.fx < L_ + h or self.fx > R_ - h:
                 left = self.fx < L_ + h
                 if s == "fall" and self.cfg["climb"] and abs(self.vx) > 2300 * k:
                     self.fx = L_ if left else R_
                     self.fy = min(max(self.fy - self.PH / 2, T_ + h), B_ - h)
                     self.surf, self.state, self.timer = ("lwall" if left else "rwall"), "hang", 2.5
+                    self.fx_crack(self.fx, self.fy, say=False)
                     self.sq, self.sqv, self.rot, self.spin = .45, 0, 0.0, 0.0
                     self.sfx("splat")
                     self.say(self.line("splat"))
                     return
+                if abs(self.vx) > 2600 * k:
+                    self.fx_crack(L_ if left else R_, self.fy - self.PH / 2)
                 self.fx = L_ + h if left else R_ - h
                 self.vx = -self.vx * .55
                 self.spin = -self.spin * .6
@@ -3469,6 +3778,8 @@ class Clawd:
                     self.sfx("splat")
                     self.say(self.line("splat"))
                     return
+                if self.vy < -2300 * k:
+                    self.fx_crack(self.fx, T_)
                 self.fy = T_ + self.PH
                 self.vy = abs(self.vy) * .4
                 self.sfx("land", .5)
@@ -3477,6 +3788,8 @@ class Clawd:
                 if land:
                     y, hwnd, rect = land
                     self.fy = y
+                    if self.vy > 2900 * k and hwnd is None:
+                        self.fx_crack(self.fx, y)
                     if s == "fall" and self.vy > 520 * k:   # bounce!
                         self.vy = -self.vy * .42
                         self.vx *= .72
@@ -3506,6 +3819,8 @@ class Clawd:
         if self.surf == "floor" and self.plat:
             hw = self.plat
             if not user32.IsWindow(hw) or not user32.IsWindowVisible(hw) or user32.IsIconic(hw):
+                if self.cooldown("floor_gone", 15):
+                    self.sayl("floor_gone")
                 return self.fall_off()
             r = frame_rect(hw)
             if r[1] <= T_ + 4:
@@ -3520,16 +3835,32 @@ class Clawd:
             if (dx or dy) and self.cooldown("ride", 20) and random.random() < .4:
                 self.say(self.line("ride"))
             self.fx += dx
-            self.fy = r[1]
+            self.fy = r[1] + self.sink
             self.plat_rect = r
+        elif self.surf == "floor":
+            self.fy = B_ + self.sink
+        if s != "hide" and self.sink:
+            self.sink = max(0.0, self.sink - self.PH * 3 * dt)
 
         # ---------- locomotion along the current surface
-        moving = s in ("walk", "chase", "play") and self.surf != "fly" and not frozen
+        moving = s in ("walk", "chase", "play", "flee") and self.surf != "fly" and not frozen
         target = 0.0
         if s == "walk":
-            target = (60 if self.surf != "floor" else 75) * k * max(.7, self.cfg["scale"])
+            target = (60 if self.surf != "floor" else 75) * k * max(.7, self.cfg["scale"]) * self.persona()["speed"]
         elif s in ("chase", "play"):
-            target = 150 * k * max(.7, self.cfg["scale"])
+            target = 150 * k * max(.7, self.cfg["scale"]) * max(1, self.persona()["speed"])
+        elif s == "flee" and self.surf == "floor":
+            target = 330 * k * max(.7, self.cfg["scale"])
+            if self.flee_logic(mx, my):
+                return
+        if s == "walk" and self.goto and not frozen and self.surf == "floor":
+            gx, gfn = self.goto
+            if abs(gx - self.fx) < 10 * k:
+                self.goto = None
+                gfn()
+                moving, target = False, 0
+            else:
+                self.dir = 1 if gx > self.fx else -1
         if s == "chase" and not frozen:
             dx = mx - self.fx
             if abs(dx) < self.PW / 2:
@@ -3543,9 +3874,22 @@ class Clawd:
             b = self.ball
             dx = b.x - self.fx
             self.dir = 1 if dx > 0 else -1
+            if b.plat and b.plat != self.plat and b.y < self.fy - self.PH and self.surf == "floor" and self.cooldown("ballhop", 3):
+                self.try_hop(only=b.plat, then=lambda: self.set_state("play", 8))
+            elif self.plat and b.y > self.fy + self.PH and self.cooldown("balldown", 2.5):
+                self.off_window(lambda: self.set_state("play", 8))
             if abs(dx) < self.PW * .55 and abs(b.y - self.fy) < self.PH * 1.2 and self.cooldown("kick", .6):
-                b.vx = self.dir * random.uniform(700, 1400) * k
-                b.vy = -random.uniform(500, 1100) * k
+                if random.random() < .7:   # pass it to you: aim at the mouse (fetch!)
+                    ft, g = random.uniform(.65, .9), self.gravity()
+                    b.vx = max(-2200 * k, min(2200 * k, (mx - b.x) / ft))
+                    b.vy = max(-2600 * k, min(-400 * k, (my - b.y - .5 * g * ft * ft) / ft))
+                    self.last_kick_t = self.time
+                    if self.cooldown("fetch_say", 8) and random.random() < .5:
+                        self.say(self.line("fetch"))
+                else:
+                    b.vx = self.dir * random.uniform(700, 1400) * k
+                    b.vy = -random.uniform(500, 1100) * k
+                b.plat = None
                 self.sfx("kick")
                 self.sqv -= 5
                 self.happy = min(100, self.happy + 2)
@@ -3562,9 +3906,13 @@ class Clawd:
             pose["gait"] = self.walkdist / (P * 1.7) * math.pi
             pose["bob"] = -.22 * abs(math.sin(pose["gait"]))
             pose["tilt"] = fwd * min(.12, self.speed / (1400 * k))
-            if s in ("chase", "play"):
+            if s in ("chase", "play", "flee"):
                 pose["arms"] = "wave" if int(pose["gait"] / math.pi) % 2 else "wave2"
             self.move_along(step)
+            if self.surf == "floor" and self.sink < 1 and self.walkdist > self.next_foot and self.fx_on():
+                self.next_foot = self.walkdist + P * 2.4
+                self.foot_i = 1 - self.foot_i
+                self.fxl.add("foot", self.fx + (self.foot_i - .5) * P * 2.2, self.fy, 4.5, P=P)
         if frozen:
             pose.update(eyes="happy" if self.happy > 60 else "open", arms="wave" if int(self.time * 3) % 2 else "down")
 
@@ -3703,6 +4051,38 @@ class Clawd:
             self.look = [self.dir * .5, 0]
         elif s == "exercise" and self.ex:
             self.exercise_pose(dt, pose)
+        elif s == "laugh":
+            pose.update(eyes="happy", arms="wave" if int(self.time * 10) % 2 else "wave2", mouth=True,
+                        bob=-abs(math.sin(self.time * 14)) * .35, tilt=-fwd * .1 + math.sin(self.time * 9) * .06)
+        elif s == "lounge":   # lazy: lean back, hands behind the head, sunglasses
+            pose.update(eyes="half", arms="high", tilt=-fwd * .16, shades=True, bob=math.sin(self.time * 1.6) * .06,
+                        leg=[(0, 2), (0, 2), (.6, 1.4), (1.2, 1)])
+            if self.cooldown("z", 3.5) and random.random() < .4:
+                self.spawn("z")
+        elif s == "stomp":
+            ph = (2.4 - self.timer) / .6
+            f = ph % 1
+            pose.update(eyes="angry", arms="up", bob=-abs(math.sin(math.pi * f)) * 2.6)
+            n = int(ph)
+            if n != getattr(self, "_stomp_n", 0):
+                self._stomp_n = n
+                self.sq, self.sqv = .4, 0
+                self.sfx("boom", .6)
+                self.spawn("dust", 3)
+                if self.plat:
+                    self.shove_window(self.plat, 0, 0, shake=.3)
+        elif s == "laser":
+            self.laser_step(dt, mx, my, pose)
+        elif s in ("doodle", "build", "mine", "smash"):
+            self.trick_step(s, dt, pose)
+        elif s == "flee":
+            pose["eyes"] = "happy"
+            if self.game and self.game.get("kind") == "tag" and self.time > self.game["until"]:
+                self.game = None
+                self.set_state("laugh")
+                self.sayl("tag_win")
+        elif s == "hide":
+            self.hide_step(dt, mx, my, pose)
         elif s == "peek":
             L_, _, R_, _ = self.mon
             hidden = self.timer > .7
@@ -3788,7 +4168,7 @@ class Clawd:
             self.fx += step
             if self.fx <= lo or self.fx >= hi:
                 self.fx = min(max(self.fx, lo), hi)
-                if self.state not in ("walk", "chase", "play"):
+                if self.state not in ("walk", "chase", "play", "flee"):
                     return
                 if self.plat:
                     if self.state == "walk" and random.random() < .45:
@@ -3873,6 +4253,7 @@ class Clawd:
 
     def fall_off(self, vx=0.0, vy=0.0, state="fall"):
         self.surf, self.plat = "air", None
+        self.sink = 0.0
         self.vx, self.vy = vx, vy
         self.state, self.max_v = state, 0
 
@@ -3893,6 +4274,12 @@ class Clawd:
         return best
 
     def land(self, hwnd, rect):
+        kk, self.kick = self.kick, None
+        if kk and not self.after_land:
+            if kk["done"]:
+                self.after_land = lambda: self.set_state("laugh")
+            else:
+                self.after_land = lambda: (self.set_state("idle", 1.5), self.sayl("kick_miss"))
         s, k = self.state, self.k
         impact, vx = self.vy, self.vx
         self.surf, self.plat, self.plat_rect = "floor", hwnd, rect
@@ -3936,6 +4323,621 @@ class Clawd:
             self.chain = self._chain2 = None
             self.rot = 0.0
             fn()
+
+    # ---------------------------------------------------------- v1.2: personality
+    def persona(self):
+        return PERSONAS.get(self.cfg.get("personality"), PERSONAS["balanced"])
+
+    def set_persona(self, key):
+        if key not in PERSONAS:
+            return
+        self.cfg["personality"] = key
+        self.save()
+        name = T["personas"][1 if self.lang == "ar" else 0][list(PERSONAS).index(key)]
+        self.say(self.line("persona_set", p=name))
+        act = {"naughty": "laugh", "lazy": "lounge", "hyper": "dance", "sweet": "wave"}.get(key, "proud")
+        self.set_state(act, None if act in ("laugh", "lounge", "wave") else 3)
+
+    # ---------------------------------------------------------- v1.2: moving other apps' windows (mischief)
+    def shove_window(self, h, vx, vy=0.0, shake=0.0):
+        """Animate another app's window: a sliding shove (with friction) and/or a little shake."""
+        if not self.cfg["mischief"] or not h or not user32.IsWindow(h) or user32.IsZoomed(h) or user32.IsIconic(h):
+            return False
+        x, y, r, b = win_pos(h)
+        self.win_orig.setdefault(h, (x, y))
+        a = self.wmove.get(h)
+        if not a:
+            a = self.wmove[h] = {"x": float(x), "y": float(y), "vx": 0.0, "vy": 0.0, "shake": 0.0, "last": (x, y)}
+        a["vx"] += vx
+        a["vy"] += vy
+        a["shake"] = max(a["shake"], shake)
+        a["w"] = r - x
+        return True
+
+    def step_windows(self, dt):
+        if not self.wmove:
+            return
+        k = self.k
+        L_, T_, R_, B_ = self.mon
+        for h, a in list(self.wmove.items()):
+            if not user32.IsWindow(h) or user32.IsZoomed(h) or user32.IsIconic(h):
+                del self.wmove[h]
+                continue
+            x, y, _, _ = win_pos(h)
+            if abs(x - a["last"][0]) > 2 or abs(y - a["last"][1]) > 2:   # the user grabbed it (or it can't move): let go
+                del self.wmove[h]
+                continue
+            a["x"] += a["vx"] * dt
+            a["y"] += a["vy"] * dt
+            a["vx"] *= math.exp(-2.6 * dt)
+            a["vy"] *= math.exp(-6 * dt)
+            pad = 8 * k
+            if a["w"] < R_ - L_:   # bounce off the screen edges
+                if a["x"] < L_ - pad:
+                    a["x"], a["vx"] = L_ - pad, abs(a["vx"]) * .45
+                    self.sfx("kick", .4)
+                elif a["x"] + a["w"] > R_ + pad:
+                    a["x"], a["vx"] = R_ + pad - a["w"], -abs(a["vx"]) * .45
+                    self.sfx("kick", .4)
+            a["y"] = min(max(a["y"], T_), B_ - 80 * k)
+            off = 0.0
+            if a["shake"] > 0:
+                a["shake"] -= dt
+                off = math.sin(self.time * 75) * 9 * k * min(1.0, a["shake"] / .2)
+            done = abs(a["vx"]) < 20 * k and abs(a["vy"]) < 20 * k and a["shake"] <= 0
+            nx, ny = int(round(a["x"] + (0 if done else off))), int(round(a["y"] + (0 if done else abs(off) * .3)))
+            if (nx, ny) != a["last"]:
+                move_win(h, nx, ny)
+                a["last"] = (nx, ny)
+            if done:
+                del self.wmove[h]
+
+    def undo_windows(self):
+        self.wmove.clear()
+        for h, (x, y) in self.win_orig.items():
+            if user32.IsWindow(h) and not user32.IsZoomed(h):
+                move_win(h, x, y)
+        self.win_orig.clear()
+        self.sayl("undo_win")
+
+    def go_kick(self, only=None, user=False):
+        """Flying kick at the side of a window: it slides away across the screen."""
+        if user:
+            self.stay = False
+        if not (self.cfg["mischief"] and self.cfg["windows"]):
+            if user:
+                self.sayl("mischief_off")
+            return False
+        if self.surf != "floor":
+            if user:
+                self.need_floor(lambda: self.go_kick(only, True))
+            return user
+        k, g = self.k, self.gravity()
+        L_, T_, R_, B_ = self.mon
+        fg = user32.GetForegroundWindow()
+        busy = not user and idle_seconds() < 2   # don't yank the window you're typing in
+        cands = []
+        for h, r, _, _ in self.windows:
+            if (only and h != only) or h == self.plat or h in self.wmove or user32.IsZoomed(h) or (h == fg and busy):
+                continue
+            if r[2] - r[0] > (R_ - L_) * .9 or r[3] - r[1] < 110 * k:
+                continue
+            for side, ex in ((-1, r[0]), (1, r[2])):
+                out = ex + side * self.PW * .5          # where he is when his foot touches the edge
+                dist = (self.fx - out) * side            # >= 0: he's on the outside of that edge
+                if not (L_ + self.PW * .6 < out < R_ - self.PW * .6) or dist < 0 or dist > 900 * k:
+                    continue
+                cy = min(max((r[1] + r[3]) / 2, r[1] + 50 * k + self.PH * .5), B_ - self.PH * .6)
+                if not r[1] + 30 * k < cy < r[3] - 15 * k:
+                    continue
+                rise = self.fy - (cy + self.PH * .5)
+                if rise > 650 * k or rise < -60 * k or not top_visible(h, ex - side * 10 * k, cy - 4):
+                    continue
+                cands.append((h, side, ex, cy, out, rise))
+        if not cands:
+            if user:
+                self.sayl("no_kick")
+            return False
+        h, side, ex, cy, out, rise = random.choice(cands)
+        peak = max(rise, 0) + 130 * k
+        vy0 = -math.sqrt(2 * g * peak)
+        t = (-vy0 + math.sqrt(max(0.0, vy0 * vy0 - 2 * g * rise))) / g
+        c = .35   # air drag used in the air physics
+        vx = (out - self.fx) * c / (1 - math.exp(-c * t))
+        self.kick = {"h": h, "dir": -side, "ex": ex, "cy": cy, "done": False}
+        self.pending_jump = (vx, vy0)
+        self.dir = -side
+        self.set_state("crouch", .55)
+        self.sayl("kick_windup")
+        self.eyes_override = ("angry", self.time + .7)
+        return True
+
+    def do_kick(self):
+        kk, k = self.kick, self.k
+        kk["done"] = True
+        d = kk["dir"]
+        power = min(1.5, .8 + .2 * self.persona()["naughty"])
+        self.shove_window(kk["h"], d * random.uniform(1500, 2500) * k * power, -random.uniform(80, 220) * k, shake=.15)
+        self.vx, self.vy = -d * 380 * k, min(self.vy, -320 * k)
+        self.spin = -d * 3.0
+        self.sfx("kick")
+        self.sfx("boing", .6)
+        self.sq, self.sqv = .4, 0
+        if self.fx_on():
+            self.fxl.add("pow", kk["ex"], kk["cy"], .9, text=random.choice(("POW!", "BAM!", "BONK!", "WHAM!", "KAPOW!")))
+        self.sayl("kick_hit")
+        self.stat("kicks")
+
+    # ---------------------------------------------------------- v1.2: hiding behind windows / the taskbar
+    def hide_spots(self):
+        k = self.k
+        L_, T_, R_, B_ = self.mon
+        spots = [("bar", None, None, 0, 0.0)]
+        for h, r, _, _ in self.windows:
+            if T_ + 6 < r[1] < B_ - self.PH * 1.6 and r[2] - r[0] > self.PW * 1.8 and top_visible(h, (r[0] + r[2]) / 2, r[1]):
+                spots.append(("top", h, r, 0, 0.0))
+            if r[3] >= B_ - 8 * k and not user32.IsZoomed(h) and r[3] - r[1] > self.PH * 2:
+                for side, ex in ((-1, r[0]), (1, r[2])):
+                    if L_ + self.PW < ex < R_ - self.PW and top_visible(h, ex - side * 12 * k, B_ - self.PH * .5 - 4):
+                        spots.append(("side", h, r, side, ex))
+        return spots
+
+    def go_hide(self, user=False):
+        if user:
+            self.stay = False
+        if self.surf != "floor":
+            return self.need_floor(lambda: self.go_hide(user))
+        if self.plat:   # standing on a window: duck behind its top edge right here
+            return self.begin_hide("top", self.plat, self.plat_rect)
+        k = self.k
+        spots = self.hide_spots()
+        sides = [sp for sp in spots if sp[0] == "side" and abs(sp[4] - self.fx) < 1100 * k]
+        tops = [sp for sp in spots if sp[0] == "top"]
+        r = random.random()
+        if sides and r < .5:
+            _, h, rect, side, ex = random.choice(sides)
+            self.set_state("walk", 30)
+            self.goto = (ex + side * self.PW * .6, lambda: self.begin_hide("side", h, rect, side, ex))
+            return
+        if tops and r < .85:
+            h = random.choice(tops)[1]
+            if self.try_hop(only=h, then=lambda: self.begin_hide("top", self.plat, self.plat_rect) if self.plat else
+                            self.begin_hide("bar")):
+                return
+        self.begin_hide("bar")
+
+    def begin_hide(self, kind, h=None, rect=None, side=0, ex=0.0, full=False, game=False):
+        if kind == "top" and not self.plat:
+            kind = "bar"
+        self.goto = None
+        self.set_state("hide", 75 if game else random.uniform(9, 16))
+        self.hide_info = {"kind": kind, "h": h, "r": rect, "side": side, "ex": ex, "full": full, "game": game,
+                          "pop": -9.0, "t0": self.time}
+        self.sfx("whoosh", .5)
+        if not game and random.random() < .6:
+            self.sayl("hide")
+
+    def hide_step(self, dt, mx, my, pose):
+        hi, k, PH = self.hide_info, self.k, self.PH
+        if not hi:
+            self.timer = 0
+            return
+        kind = hi["kind"]
+        if kind == "side":
+            if not user32.IsWindow(hi["h"]) or user32.IsIconic(hi["h"]):
+                return self.set_state("idle", 1)
+            hi["r"] = frame_rect(hi["h"])
+            hi["ex"] = hi["r"][0] if hi["side"] < 0 else hi["r"][2]
+        cx, cy = self.pet_center()
+        el = self.time - hi["t0"]
+        if hi["game"]:
+            depth = .62 if el % 17 > 15.6 else 1.15        # a tiny peek now and then as a hint
+            self.over_t = self.over_t + dt if self.cursor_over else 0.0
+            if self.over_t > .3:
+                return self.seek_found()
+            if el > 70:
+                return self.seek_timeout()
+        else:
+            depth = 1.08 if el % 6 > 4.8 else .6        # duck down, then peek over the edge again
+            if math.hypot(mx - cx, my - cy) < 170 * k and self.time - hi["pop"] > 3 and self.cooldown("boo", 4):
+                hi["pop"] = self.time
+                self.sayl("boo")
+                self.sfx("peek")
+                self.sqv -= 6
+            if self.time - hi["pop"] < 1.1:
+                depth = -.1 if kind == "side" else 0.0
+        if kind == "side":
+            tx = hi["ex"] - hi["side"] * self.PW * (depth - .55)
+            self.fx += (tx - self.fx) * min(1, dt * 6)
+        else:
+            self.sink += (depth * PH - self.sink) * min(1, dt * (10 if depth < .3 else 5))
+        pose.update(arms="up" if kind != "side" else "down", bob=math.sin(self.time * 2.2) * .05,
+                    eyes="big" if self.time - hi["pop"] < 1.1 else "open")
+
+    def hide_masks(self):
+        L_, T_, R_, B_ = self.mon
+        out = []
+        if self.surf == "floor" and self.sink > .5:
+            if self.plat and self.plat_rect:
+                out.append(self.plat_rect)
+            elif not self.plat:
+                out.append((L_ - self.S, B_, R_ + self.S, B_ + 2 * self.S))
+        hi = self.hide_info
+        if self.state == "hide" and hi and hi["kind"] == "side" and hi.get("r"):
+            out.append(hi["r"])
+        return out
+
+    # ---------------------------------------------------------- v1.2: desktop effects & tricks
+    def fx_on(self):
+        return self.fxl is not None and self.cfg["desk_fx"]
+
+    def fx_crack(self, x, y, say=True, force=False):
+        if not self.fx_on() or not (force or self.cooldown("crack", 1.2)):
+            return None
+        k, lines = self.k, []
+        n = random.randint(6, 9)
+        for i in range(n):
+            a = i / n * 2 * math.pi + random.uniform(-.3, .3)
+            pts, px, py = [(0.0, 0.0)], 0.0, 0.0
+            for _ in range(random.randint(3, 5)):
+                a += random.uniform(-.5, .5)
+                d = random.uniform(15, 42) * k
+                px, py = px + math.cos(a) * d, py + math.sin(a) * d
+                pts.append((px, py))
+            lines.append(pts)
+        it = self.fxl.add("crack", x, y, 7.0, lines=lines)
+        self.sfx("crash", .6)
+        if say and self.cooldown("crack_say", 30):
+            self.root.after(500, lambda: self.sayl("crack"))
+        return it
+
+    def party(self, small=False):
+        if self.fx_on():
+            self.fxl.confetti(60 if small else 170)
+        else:
+            self.spawn("heart", 4)
+        self.sfx("win")
+        if not small:
+            self.sayl("confetti")
+            self.set_state("dance", 4)
+
+    def start_trick(self, kind, user=False):
+        if user:
+            self.stay = False
+        if not self.fx_on():
+            if user:
+                self.sayl("fx_off")
+            return
+        if kind not in ("laser", "glitch") and self.surf != "floor":
+            return self.need_floor(lambda: self.start_trick(kind, user))
+        if kind == "glitch":
+            cx, cy = self.pet_center()
+            self.fxl.add("glitch", cx, cy - self.PH, 1.0)
+            self.sfx("static", .7)
+            if self.surf != "air":
+                self.set_state("look", 2.5)
+            self.eyes_override = ("big", self.time + 1.5)
+            self.root.after(900, lambda: self.sayl("glitch"))
+            return
+        self.set_state(kind)
+        if self.state != kind:
+            return
+        self.work = {"kind": kind, "t": 0.0, "n": 0, "item": None, "side": random.choice((-1, 1))}
+        L_, _, R_, _ = self.mon
+        if self.fx - L_ < self.PW * 2.2:   # keep the work spot on screen
+            self.work["side"] = 1
+        elif R_ - self.fx < self.PW * 2.2:
+            self.work["side"] = -1
+        words = {"build": (("Building", "Scaffolding", "Engineering", "Constructing"), ("أبني", "أشيّد", "أهندس", "أعمّر")),
+                 "mine": (("Mining", "Digging", "Excavating", "Tunneling"), ("أعدّن", "أحفر", "أنقّب", "أحفر نفق"))}
+        if kind in words:
+            self.word = random.choice(words[kind][1 if self.lang == "ar" else 0])
+
+    def tool_rects(self, tool, side):
+        a = self.arm[1] if side > 0 else self.arm[0]
+        u = 15 if side > 0 else 1
+        if tool == "hammer":
+            return [(u - .35, a - 3.2, u + .35, a + 1.2, "#8B5A2B"), (u - 1.6, a - 4.3, u + 1.6, a - 3.0, "#8a8a8a")]
+        if tool == "pick":
+            return [(u - .3, a - 3.6, u + .3, a + 1.2, "#8B5A2B"), (u - 2.4, a - 4.3, u + 2.4, a - 3.5, "#9a9a9a"),
+                    (u - 2.9, a - 3.9, u - 2.2, a - 3.0, "#9a9a9a"), (u + 2.2, a - 3.9, u + 2.9, a - 3.0, "#9a9a9a")]
+        if tool == "marker":
+            return [(u - .35, a - 2.0, u + .35, a + .6, "#3B82F6"), (u - .35, a - 2.6, u + .35, a - 2.0, "#222222")]
+        if tool == "tape":
+            return [(u - 1.1, a - 1.3, u + 1.1, a + .9, "#BDBDBD"), (u - .45, a - .65, u + .45, a + .25, "#7A7A7A")]
+        return []
+
+    def trick_step(self, s, dt, pose):
+        w = self.work
+        if not w or not self.fx_on():
+            self.timer = 0
+            return
+        k, P, PW, PH = self.k, self.P, self.PW, self.PH
+        prev = w["t"]
+        w["t"] += dt
+        t = w["t"]
+        side = w["side"]
+        self.dir = side
+
+        def hit(period):
+            return int(t / period) != int(prev / period)
+        spot = self.fx + side * PW * .95
+        if s == "doodle":
+            if w["item"] is None:
+                L_, T_, R_, B_ = self.mon
+                nm = self.cfg.get("name") or ("you" if self.lang != "ar" else "صديقي")
+                txt = random.choice(DOODLES[1 if self.lang == "ar" else 0]).format(n=nm)
+                x = min(max(self.fx + side * PW * 1.3, L_ + 170 * k), R_ - 170 * k)
+                y = max(T_ + 60 * k, self.fy - PH * 2.3)
+                w["item"] = self.fxl.add("doodle", x, y, 11.0, text=txt,
+                                         color=random.choice(("#E5484D", "#3B82F6", "#16A34A", ORANGE, "#9333EA")))
+            pose.update(arms="up" if int(t * 7) % 2 else "wave", eyes="happy", tilt=side * .08,
+                        extra=self.tool_rects("marker", side))
+            if self.cooldown("type", .15):
+                self.sfx("type", .5)
+        elif s == "build":
+            if w["item"] is None:
+                w["item"] = self.fxl.add("build", spot, self.fy, 16.0, bricks=[], fall=None, P=P)
+            it = w["item"]
+            if not w.get("done"):
+                swing = (t % .5) / .5
+                pose.update(arms="up" if swing < .45 else "down", tilt=side * .06, extra=self.tool_rects("hammer", side))
+                if hit(.5) and t > .3:
+                    w["n"] += 1
+                    self.fxl.add_brick(it, w["n"] - 1)
+                    self.sfx("tok", .6)
+                    self.sq = .12
+                    self.spawn("dust")
+                if w["n"] >= 6:
+                    w["done"] = True
+                    self.timer = min(self.timer, 2.4)
+                    self.sayl("built")
+                    self.spawn("spark", 5)
+                    if random.random() < .5:   # sometimes the prototype collapses
+                        it["fall"] = it["t"] + random.uniform(2.5, 4.5)
+                        self.root.after(int((it["fall"] - it["t"]) * 1000) + 700, lambda: self.sayl("collapse"))
+            else:
+                pose.update(arms="high", eyes="happy", blush=True)
+        elif s == "mine":
+            if w["item"] is None:
+                w["item"] = self.fxl.add("hole", spot, self.fy, 10.0, w=0.0)
+            it = w["item"]
+            if not w.get("done"):
+                swing = (t % .45) / .45
+                pose.update(arms="high" if swing < .5 else "down", tilt=side * (.14 if swing > .5 else -.04),
+                            extra=self.tool_rects("pick", side))
+                if hit(.45) and t > .3:
+                    w["n"] += 1
+                    it["w"] = min(PW * 1.1, it["w"] + PW * .12)
+                    self.sfx("clink", .55)
+                    self.sq = .1
+                    for _ in range(3):
+                        self.fxl.add("rock", spot, self.fy - 4, 1.2, vx=random.uniform(-260, 260) * k,
+                                     vy=-random.uniform(350, 700) * k, s=random.uniform(.3, .6) * P)
+                if w["n"] >= 9:
+                    w["done"] = True
+                    loot = random.choice(("gem", "bug", "coin", "cookie"))
+                    self.fxl.add("loot", spot, self.fy - P, 2.6, what=loot, P=P)
+                    self.sfx("coin" if loot != "bug" else "no", .6)
+                    self.sayl("found_" + loot)
+                    self.timer = 2.6
+                    if loot == "cookie":
+                        self.root.after(1800, lambda: self.feed() if self.state in ("mine", "idle", "look") else None)
+            else:
+                pose.update(arms="high", eyes="happy", bob=-.2)
+        elif s == "smash":
+            if t < .75:   # wind up...
+                pose.update(arms="up", eyes="angry", tilt=-side * .12)
+                self.sq = -.2 * t
+            elif not w.get("hit"):   # ...PUNCH the screen
+                w["hit"] = True
+                w["item"] = self.fx_crack(self.fx + side * PW * .75, self.fy - PH * .7, say=False, force=True)
+                self.sq, self.sqv = .35, 0
+                self.eyes_override = ("big", self.time + 1)
+                self.sayl("smash")
+            elif t < 1.6:
+                pose.update(eyes="big", extra=[(16, 2.6, 18.6, 4.6, ORANGE)] if side > 0 else [(-2.6, 2.6, 0, 4.6, ORANGE)])
+            else:   # fix it with duct tape like a pro
+                pose.update(arms="up" if int(t * 6) % 2 else "wave", eyes="happy", extra=self.tool_rects("tape", side))
+                if t > 2.3 and not w.get("taped"):
+                    w["taped"] = True
+                    if w["item"]:
+                        w["item"]["tape"] = True
+                    self.sfx("tok", .6)
+                    self.root.after(400, lambda: self.sayl("tape"))
+
+    def laser_step(self, dt, mx, my, pose):
+        pose.update(eyes="angry", arms="down", bob=math.sin(self.time * 30) * .04)
+        if not self.fx_on():
+            self.timer = 0
+            return
+        if self.timer < self.DUR["laser"][0] - .35 and hasattr(self, "sx"):   # charge up, then fire
+            sx, sy = self.wx, self.wy
+            (x1, y1), (x2, y2) = self.T(4.5, 3), self.T(11.5, 3)
+            self.fxl.beam = [(x1 + sx, y1 + sy, mx, my), (x2 + sx, y2 + sy, mx, my)]
+            if self.cooldown("scorch", .05):
+                self.fxl.add("scorch", mx + random.uniform(-3, 3) * self.k, my + random.uniform(-3, 3) * self.k, 4.0)
+            if self.cooldown("zap", .22):
+                self.sfx("zap", .35)
+        if self.timer - dt <= 0:
+            self.fxl.beam = None
+
+    # ---------------------------------------------------------- v1.2: games
+    def end_game(self):
+        g, self.game = self.game, None
+        if g and g.get("kind") == "ttt":
+            try:
+                g["win"].win.destroy()
+            except tk.TclError:
+                pass
+        if g and self.state in ("hide", "flee"):
+            self.set_state("idle", 1)
+
+    def game_won_by_user(self):
+        """Grabbed him with the mouse during tag / hide and seek: that counts!"""
+        g, self.game = self.game, None
+        t = round(self.time - g.get("t0", self.time), 1)
+        self.say(self.line("tag_caught" if g["kind"] == "tag" else "seek_found", t=t if g["kind"] == "tag" else int(t)))
+        self.party(small=True)
+
+    def game_seek(self):
+        self.end_game()
+        self.stay = False
+        if self.surf not in ("air", "fly"):
+            self.set_state("idle", 99)
+        self.game = {"kind": "seek", "t0": self.time}
+        self.sayl("seek_start")
+
+        def go():
+            if not self.game or self.game.get("kind") != "seek" or self.state == "drag":
+                return
+            spots = self.hide_spots()
+            kind, h, rect, side, ex = random.choice(spots[1:]) if len(spots) > 1 and random.random() < .85 else spots[0]
+            cx, cy = self.pet_center()
+            self.fxl.add("puff", cx, cy, .6) if self.fx_on() else None
+            self.sfx("poof", .6)
+            L_, T_, R_, B_ = self.mon
+            self.surf, self.vx, self.vy, self.rot, self.spin = "floor", 0.0, 0.0, 0.0, 0.0
+            self.kick = self.after_land = self.chain = self._chain2 = None
+            self.say_queue, self.bubble = [], None
+            if kind == "top":
+                self.plat, self.plat_rect = h, rect
+                self.fx = random.uniform(rect[0] + self.PW * .6, rect[2] - self.PW * .6)
+            elif kind == "side":
+                self.plat, self.fx = None, ex - side * self.PW * .62
+            else:
+                self.plat, self.fx = None, random.uniform(L_ + self.PW, R_ - self.PW)
+            self.sink = self.PH * 1.15 if kind != "side" else 0.0
+            self.fy = (rect[1] if kind == "top" else B_) + self.sink
+            self.begin_hide(kind, h, rect, side, ex, full=True, game=True)
+            self.game = {"kind": "seek", "t0": self.time}
+        self.root.after(3300, go)
+
+    def seek_found(self):
+        hi = self.hide_info
+        t = int(self.time - hi["t0"]) if hi else 0
+        self.set_state("laugh")
+        self.game = None
+        self.sayl("seek_found", t=t)
+        self.party(small=True)
+
+    def seek_timeout(self):
+        self.set_state("proud")
+        self.game = None
+        self.sayl("seek_win")
+
+    def game_tag(self):
+        self.end_game()
+        self.stay = False
+        self.game = {"kind": "tag", "t0": self.time, "until": self.time + 25}
+        self.sayl("tag_start")
+        self.need_floor(lambda: self.set_state("flee", 30))
+
+    def tag_caught(self):
+        t = round(self.time - self.game["t0"], 1)
+        self.game = None
+        self.set_state("dizzy", 2)
+        self.sayl("tag_caught", t=t)
+        self.party(small=True)
+
+    def flee_logic(self, mx, my):
+        """Tag: run away from the cursor, dodge with jumps, leap over it when cornered. True if he jumped."""
+        k = self.k
+        L_, T_, R_, B_ = self.mon
+        dx = self.fx - mx
+        dy = my - (self.fy - self.PH / 2)
+        if abs(dx) < 650 * k and abs(dy) < 500 * k:
+            self.dir = 1 if dx > 0 else -1
+        h = self.half()
+        cornered = (self.fx < L_ + h + 25 * k and self.dir < 0) or (self.fx > R_ - h - 25 * k and self.dir > 0)
+        close = math.hypot(dx, dy) < 190 * k
+        if (cornered and abs(dx) < 400 * k and self.cooldown("leap", 1)) or (close and self.cooldown("dodge", .7)):
+            away = -self.dir if cornered else (1 if dx > 0 else -1)
+            self.launch(away * random.uniform(500, 800) * k, -random.uniform(950, 1250) * k)
+            self.state = "jump"
+            if random.random() < .35:
+                self.spin = -away * 2 * math.pi / .85
+            self.sfx("whoosh", .5)
+            if self.cooldown("taunt", 3):
+                self.sayl("taunt")
+            return True
+        return False
+
+    def game_guess(self):
+        self.end_game()
+        self.game = {"kind": "guess", "n": random.randint(1, 100), "tries": 0}
+        self.open_chat()
+        self.deliver(self.line("guess_start"), [])
+        if self.surf not in ("air",):
+            self.set_state("think", 2.5)
+
+    def guess_input(self, n):
+        gm = self.game
+        gm["tries"] += 1
+        if n == gm["n"]:
+            msg = self.line("guess_ok", n=n, t=gm["tries"], c=self.c_())
+            self.game = None
+            self.party()
+        else:
+            msg = self.line("guess_hi" if n < gm["n"] else "guess_lo")
+            self.sqv -= 4
+        self.deliver(msg, [])
+
+    def game_ttt(self):
+        g = self.game
+        if g and g.get("kind") == "ttt":
+            try:
+                return g["win"].win.lift()
+            except tk.TclError:
+                pass
+        self.end_game()
+        self.game = {"kind": "ttt", "win": TicTacToe(self)}
+        self.sayl("ttt_start")
+
+    def ttt_result(self, res):
+        if res == "X":
+            self.set_state("sad", 2.5)
+            self.sayl("ttt_lose")
+            self.party(small=True)
+        elif res == "O":
+            self.set_state("dance", 3)
+            self.sayl("ttt_win")
+        else:
+            self.set_state("think", 2)
+            self.sayl("ttt_draw")
+
+    def game_fetch(self):
+        if not self.ball:
+            self.toggle_ball()
+        self.fetch_n = 0
+        self.root.after(1500, lambda: self.sayl("fetch_hint"))
+
+    def ball_hit(self, b, sp):
+        """The ball hit him (you threw it at him!)."""
+        k = self.k
+        cx, cy = self.pet_center()
+        side = 1 if b.x > cx else -1
+        b.vx = side * max(350 * k, abs(b.vx) * .45)
+        b.vy = -abs(b.vy) * .35 - 450 * k
+        b.plat = None
+        self.sfx("boing", .6)
+        self.spawn("bang")
+        if self.state == "sleep":
+            self.afk = False
+            self.set_state("idle")
+            return self.say(self.line("wake"))
+        if self.state in ("drag", "hide", "flee", "exercise", "ask") or self.surf == "air":
+            return
+        if sp > 2300 * k:
+            self.set_state("dizzy", 1.8)
+            self.sayl("ball_hit")
+            self.happy = max(0, self.happy - 3)
+        else:
+            self.sqv -= 6
+            if self.cooldown("header_say", 5):
+                self.sayl("header")
+            if self.surf == "floor" and not self.stay and self.state in ("idle", "walk", "look", "think", "dance", "lounge"):
+                self.set_state("play", 8)
 
     # ---------------------------------------------------------- ball toy
     def toggle_ball(self):
@@ -4010,6 +5012,8 @@ class Clawd:
             tu, tv = self.dir * .5 * (1 if self.dsurf in ("floor", "lwall") else -1), 0
         elif s == "code":
             tu, tv = 0, .5
+        elif s in ("build", "mine", "doodle", "smash"):
+            tu, tv = self.dir * .5, .35
         elif s == "think":
             tu, tv = (.5 if int(self.time / 1.2) % 2 else -.5), -.5
         a = min(1, self.dt * 12)
@@ -4089,6 +5093,15 @@ class Clawd:
                 self.rect(col - 1 + (0 if side < 0 else 1.5), 4.6, col + .5 + (0 if side < 0 else 1.5), 5.3, "#F29C9C", "fx")
         if pose.get("mouth"):
             self.rect(7.2, 4.3, 8.8, 5.8, BLACK)
+        if pose.get("shades"):   # cool sunglasses
+            self.rect(2.8, 1.7, 13.2, 2.3, BLACK)
+            self.rect(3.2, 1.7, 6.6, 4.2, BLACK)
+            self.rect(9.4, 1.7, 12.8, 4.2, BLACK)
+            self.rect(3.7, 2.1, 4.5, 2.6, "white", "fx")
+            self.rect(9.9, 2.1, 10.7, 2.6, "white", "fx")
+        if s == "laser":
+            for col in (4, 11):
+                self.rect(col + eu - .25, 2 + ev - .25, col + eu + 1.25, 2 + ev + 2.25, "#FF2D2D", "fx")
 
         # hats & gear
         if self.surf == "fly":  # propeller hat
@@ -4098,12 +5111,18 @@ class Clawd:
             spin = int(self.time * 24) % 4
             span = (4.5, 2.5, .6, 2.5)[spin]
             self.rect(8 - span, -2.9, 8 + span, -2.4, ("#F5C542", "#E5484D")[spin % 2], "pet")
+        elif s in ("build", "mine", "smash"):   # hard hat (+ a lamp for mining)
+            self.rect(2, -.3, 14, .4, "#D9A520")
+            self.rect(3.5, -1.4, 12.5, -.3, "#F5C542")
+            self.rect(5.5, -2.1, 10.5, -1.4, "#F5C542")
+            if s == "mine":
+                self.rect(7.2, -1.2, 8.8, -.5, "#FFF6B0")
         elif pose.get("nightcap"):
             self.rect(3, -.6, 11, .3, "#4A6FA5")
             self.rect(5, -1.5, 10, -.6, "#4A6FA5")
             self.rect(7.5, -2.3, 11, -1.5, "#4A6FA5")
             self.rect(11, -2.6, 12.2, -1.4, "white")
-        if (self.audio.playing or s == "dance") and self.surf != "fly" and s not in ("sleep", "exercise"):  # headphones
+        if (self.audio.playing or s == "dance") and self.surf != "fly" and s not in ("sleep", "exercise", "build", "mine", "smash"):  # headphones
             self.rect(1.4, -1.1, 14.6, -.4, "#2b2b2b")
             self.rect(1.0, -.4, 2.0, 3.8, "#2b2b2b")
             self.rect(14.0, -.4, 15.0, 3.8, "#2b2b2b")
@@ -4164,6 +5183,17 @@ class Clawd:
             size = ps if kind not in ("crumb", "spark") else max(2, P // 3)
             self.sprite(rows, x, y, size, color)
 
+        # hiding behind a window / the taskbar: cut away the part of him that is "behind" it
+        masks = self.hide_masks()
+        for x1, y1, x2, y2 in masks:
+            c.create_rectangle(x1 - self.wx, y1 - self.wy, x2 - self.wx, y2 - self.wy, fill=KEY, outline="", tags="mask")
+        hi = self.hide_info
+        if masks and s == "hide" and hi and hi["kind"] != "side" and self.PH * .3 < self.sink < self.PH * .95:
+            ey = (self.plat_rect[1] if self.plat else self.mon[3]) - self.wy
+            for u in (3.5, 12.5):   # little hands gripping the edge
+                hx = self.T(u, 0)[0]
+                c.create_rectangle(hx - P * .9, ey - P * .75, hx + P * .9, ey + P * .2, fill=ORANGE, outline="", tags="pet")
+
         # pet bbox and visible area (for bubbles and hover detection)
         top = -3 if self.surf == "fly" or (self.audio.playing and s != "sleep") else 0
         xs, ys = zip(self.T(0, top), self.T(16, 9), self.T(16, top), self.T(0, 9))
@@ -4177,7 +5207,7 @@ class Clawd:
             offset = self.draw_timer_pill()
         if self.ask_req:
             self.draw_ask(offset)
-        elif s == "think" or self.waiting:
+        elif s == "think" or self.waiting or (s in ("build", "mine") and self.work and not self.work.get("done")):
             spin = SPIN[int(self.time * 12) % len(SPIN)]
             self.draw_bubble(f"{spin} {self.word}{'.' * (1 + int(self.time * 3) % 3)}", offset, ORANGE)
         elif self.bubble is not None:
@@ -4521,6 +5551,13 @@ class Clawd:
         name_v.trace_add("write", name_changed)
         name_e.bind("<Return>", lambda e: cfg["name"] and self.set_name(cfg["name"]))
         row += 1
+        ttk.Label(g, text=self.tr("persona_lbl")).grid(row=row, column=0, sticky="w", pady=4)
+        pnames, pkeys = list(T["personas"][1 if self.lang == "ar" else 0]), list(PERSONAS)
+        pers_cb = ttk.Combobox(g, values=pnames, state="readonly", width=24)
+        pers_cb.set(pnames[pkeys.index(cfg.get("personality", "balanced"))])
+        pers_cb.grid(row=row, column=1, sticky="w")
+        pers_cb.bind("<<ComboboxSelected>>", lambda e: self.set_persona(pkeys[pnames.index(pers_cb.get())]))
+        row += 1
         ttk.Label(g, text=self.tr("lang_lbl")).grid(row=row, column=0, sticky="w", pady=4)
         lang_cb = ttk.Combobox(g, values=["English", "العربية"], state="readonly", width=24)
         lang_cb.set("العربية" if self.lang == "ar" else "English")
@@ -4589,6 +5626,8 @@ class Clawd:
         check("climb_lbl", "climb")
         check("fly_lbl", "fly")
         check("windows_lbl", "windows")
+        check("mischief_lbl", "mischief")
+        check("deskfx_lbl", "desk_fx")
         check("smart_lbl", "smart")
         check("remind_lbl", "reminders")
         check("workout_lbl", "workout")
@@ -4829,6 +5868,35 @@ class Clawd:
         fun.add_command(label=tr("stats"), command=lambda: self.say(self.stats_line()))
         m.add_cascade(label=tr("funny"), menu=fun)
 
+        gm = tk.Menu(m, tearoff=0)
+        gm.add_command(label="❌⭕  " + tr("ttt"), command=self.game_ttt)
+        gm.add_command(label="🙈  " + tr("seek"), command=self.game_seek)
+        gm.add_command(label="🏃  " + tr("tag"), command=self.game_tag)
+        gm.add_command(label="🔢  " + tr("guess"), command=self.game_guess)
+        gm.add_command(label="⚽  " + tr("fetch"), command=self.game_fetch)
+        gm.add_command(label="✊  " + tr("rps"), command=lambda: (self.rps(), self.open_chat()))
+        m.add_cascade(label=tr("games"), menu=gm)
+
+        mi = tk.Menu(m, tearoff=0)
+        mi.add_command(label="🦶  " + tr("kick_win"), command=lambda: self.go_kick(user=True))
+        mi.add_command(label="🙈  " + tr("hide_win"), command=lambda: self.go_hide(user=True))
+        if self.plat:
+            mi.add_command(label="💥  " + tr("stomp"), command=self.user_do(lambda: self.set_state("stomp")))
+        mi.add_separator()
+        for key, ic in (("laser", "🔴"), ("doodle", "🖍"), ("smash", "🔨"), ("glitch", "📺"), ("build", "🧱"), ("mine", "⛏")):
+            mi.add_command(label=ic + "  " + tr(key), command=lambda k_=key: self.start_trick(k_, user=True))
+        mi.add_command(label="🎉  " + tr("confetti"), command=self.party)
+        if self.win_orig:
+            mi.add_separator()
+            mi.add_command(label="↩  " + tr("undo_win"), command=self.undo_windows)
+        m.add_cascade(label=tr("mischief"), menu=mi)
+
+        pm = tk.Menu(m, tearoff=0)
+        pv = tk.StringVar(value=self.cfg.get("personality", "balanced"))
+        for key, nm in zip(PERSONAS, T["personas"][1 if self.lang == "ar" else 0]):
+            pm.add_radiobutton(label=nm, variable=pv, value=key, command=lambda k_=key: self.set_persona(k_))
+        m.add_cascade(label=tr("persona_lbl"), menu=pm)
+
         act = tk.Menu(m, tearoff=0)
         for key in ("dance", "code", "think", "sleep", "stretch"):
             act.add_command(label=tr(key), command=lambda s=key: self.set_state(s))
@@ -4855,7 +5923,7 @@ class Clawd:
         m.add_separator()
         m.add_command(label=tr("hide"), command=self.hide)
         m.add_command(label=tr("quit"), command=self.quit)
-        self._menu_refs = (m, sv, lv, stay_v)
+        self._menu_refs = (m, sv, lv, stay_v, pv)
         m.tk_popup(e.x_root, e.y_root)
 
     def ask_youtube(self):
@@ -4914,8 +5982,375 @@ class Clawd:
         self.root.after(1300, self.root.destroy)
 
 
+class FxLayer:
+    """A click-through, full-screen transparent overlay for desktop effects (footprints, cracks, confetti...)."""
+    CONF = ("#E5484D", "#F5C542", "#3B82F6", "#16A34A", "#9333EA", ORANGE, "#EC4899", "#22D3EE")
+
+    def __init__(self, pet):
+        self.pet, self.items, self.beam, self.drawn, self.mon = pet, [], None, False, None
+        w = self.win = tk.Toplevel(pet.root)
+        w.overrideredirect(True)
+        w.attributes("-topmost", True)
+        w.attributes("-transparentcolor", KEY)
+        w.config(bg=KEY)
+        self.c = tk.Canvas(w, bg=KEY, highlightthickness=0)
+        self.c.pack(fill="both", expand=True)
+        self.place()
+        w.update_idletasks()
+        try:   # click-through, no taskbar button, never takes focus
+            hw = int(w.wm_frame(), 16)
+            ex = user32.GetWindowLongW(hw, -20)
+            user32.SetWindowLongW(hw, -20, ex | 0x20 | 0x80000 | 0x80 | 0x08000000)
+        except Exception:
+            pass
+
+    def place(self):
+        m = self.pet.mon
+        if m != self.mon:
+            self.mon = m
+            L_, T_, R_, B_ = m
+            self.win.geometry(f"{R_ - L_}x{B_ - T_ + int(90 * self.pet.k)}+{L_}+{T_}")
+
+    def add(self, kind, x, y, life, **kw):
+        it = {"k": kind, "x": float(x), "y": float(y), "t": 0.0, "life": life, **kw}
+        self.items.append(it)
+        return it
+
+    def confetti(self, n):
+        L_, T_, R_, B_ = self.pet.mon
+        k = self.pet.k
+        ps = [[random.uniform(L_, R_), T_ - random.uniform(0, 400) * k, random.uniform(-80, 80) * k,
+               random.uniform(150, 420) * k, random.choice(self.CONF), random.uniform(0, 6.28)] for _ in range(n)]
+        self.add("confetti", 0, 0, 6.5, ps=ps)
+
+    def add_brick(self, it, i):
+        P = it["P"]
+        col, row = ((0, 0), (1, 0), (2, 0), (.5, 1), (1.5, 1), (1, 2))[min(i, 5)]
+        bw, bh = 2.4 * P, 1.2 * P
+        it["bricks"].append({"x": it["x"] - 1.5 * bw + col * bw, "y": it["y"] - (row + 1) * bh, "w": bw, "h": bh,
+                             "t0": it["t"], "vx": 0.0, "vy": 0.0, "f": False})
+
+    def step(self, dt):
+        c = self.c
+        if not self.items and not self.beam:
+            if self.drawn:
+                c.delete("all")
+                self.drawn = False
+            return
+        self.place()
+        c.delete("all")
+        self.drawn = True
+        ox, oy = self.mon[0], self.mon[1]
+        keep = []
+        for it in self.items:
+            it["t"] += dt
+            if it["t"] < it["life"]:
+                keep.append(it)
+                try:
+                    getattr(self, "d_" + it["k"])(c, it, dt, ox, oy)
+                except Exception:
+                    pass
+        self.items = keep
+        if self.beam:
+            k = self.pet.k
+            for x1, y1, x2, y2 in self.beam:
+                c.create_line(x1 - ox, y1 - oy, x2 - ox, y2 - oy, fill="#FF2D2D", width=max(3, 5 * k))
+                c.create_line(x1 - ox, y1 - oy, x2 - ox, y2 - oy, fill="#FFD0D0", width=max(1, 1.6 * k))
+            x2, y2 = self.beam[0][2] - ox, self.beam[0][3] - oy
+            r = (8 + 3 * math.sin(time.perf_counter() * 40)) * k
+            c.create_oval(x2 - r, y2 - r, x2 + r, y2 + r, fill="#FF6B6B", outline="")
+
+    # --- drawers (all coordinates are screen coordinates, minus the overlay's origin)
+    def d_foot(self, c, it, dt, ox, oy):
+        s = it["P"] * .45 * min(1, (it["life"] - it["t"]) / 1.5)
+        x, y = it["x"] - ox, it["y"] - oy
+        c.create_oval(x - s, y - s * 1.1, x + s, y - s * .1, fill="#B5603E", outline="")
+
+    def d_crack(self, c, it, dt, ox, oy):
+        left = it["life"] - it["t"]
+        if left < .6 and int(left * 12) % 2:
+            return
+        k = self.pet.k
+        x, y = it["x"] - ox, it["y"] - oy
+        for pts in it["lines"]:
+            flat = [v for px, py in pts for v in (x + px, y + py)]
+            c.create_line(*flat, fill="#1b1b1b", width=max(2, 3.4 * k))
+            c.create_line(*flat, fill="#f4f4f4", width=max(1, 1.2 * k))
+        c.create_oval(x - 5 * k, y - 5 * k, x + 5 * k, y + 5 * k, fill="#f4f4f4", outline="#1b1b1b")
+        if it.get("tape"):
+            for a in (.55, -.55):
+                ca, sa = math.cos(a), math.sin(a)
+                L2, W2 = 80 * k, 13 * k
+                pts = [(-L2, -W2), (L2, -W2), (L2, W2), (-L2, W2)]
+                c.create_polygon(*[v for px, py in pts for v in (x + px * ca - py * sa, y + px * sa + py * ca)],
+                                 fill="#D6D3CE", outline="#9E9A94")
+
+    def d_confetti(self, c, it, dt, ox, oy):
+        k, t = self.pet.k, it["t"]
+        B_ = self.mon[3]
+        for p in it["ps"]:
+            p[3] = min(p[3] + 300 * k * dt, 460 * k)
+            p[0] += (p[2] + math.sin(t * 3 + p[5]) * 70 * k) * dt
+            p[1] += p[3] * dt
+            if p[1] > B_ + 40 * k:
+                continue
+            w = 7 * k * (abs(math.sin(t * 6 + p[5])) + .2)
+            x, y = p[0] - ox, p[1] - oy
+            c.create_rectangle(x - w / 2, y - 5 * k, x + w / 2, y + 5 * k, fill=p[4], outline="")
+
+    def d_pow(self, c, it, dt, ox, oy):
+        k, t = self.pet.k, it["t"]
+        sc = min(1.25, t / .1) if t < .1 else 1.25 - min(.25, (t - .1) * 2)
+        x, y = it["x"] - ox, it["y"] - oy
+        R = 62 * k * sc
+        pts = []
+        for i in range(18):
+            a = i / 18 * 2 * math.pi
+            r = R if i % 2 == 0 else R * .58
+            pts += [x + math.cos(a) * r, y + math.sin(a) * r]
+        c.create_polygon(*pts, fill="#FFD43B", outline="#141414", width=max(2, 3 * k))
+        c.create_text(x, y, text=it["text"], fill="#E5484D", font=("Impact", -int(26 * k * sc)))
+
+    def d_puff(self, c, it, dt, ox, oy):
+        k, f = self.pet.k, it["t"] / it["life"]
+        x, y = it["x"] - ox, it["y"] - oy
+        for i in range(9):
+            a = i / 9 * 2 * math.pi
+            d = (12 + 70 * f) * k
+            r = 13 * k * (1 - f) + 2
+            c.create_oval(x + math.cos(a) * d - r, y + math.sin(a) * d - r, x + math.cos(a) * d + r, y + math.sin(a) * d + r,
+                          fill="#E8E4DE", outline="#BDB8B0")
+
+    def d_scorch(self, c, it, dt, ox, oy):
+        k, t = self.pet.k, it["t"]
+        r = 7 * k * min(1, (it["life"] - t) / 1.5) + 1
+        x, y = it["x"] - ox, it["y"] - oy
+        c.create_oval(x - r, y - r, x + r, y + r, fill="#FF8A3D" if t < .25 else "#2A1A10", outline="")
+
+    def d_doodle(self, c, it, dt, ox, oy):
+        k, t = self.pet.k, it["t"]
+        left = it["life"] - t
+        if left < 1 and int(left * 10) % 2:
+            return
+        txt = it["text"][:int(t * 10) + 1]
+        c.create_text(it["x"] - ox, it["y"] - oy, text=txt, fill=it["color"], font=("Segoe Print", -int(30 * k), "bold"))
+
+    def d_build(self, c, it, dt, ox, oy):
+        k, P = self.pet.k, it["P"]
+        ground = it["y"] - oy
+        falling = it["fall"] is not None and it["t"] > it["fall"]
+        top = None
+        for b in it["bricks"]:
+            if falling:
+                if not b["f"]:
+                    b["f"], b["vx"], b["vy"] = True, random.uniform(-180, 180) * k, -random.uniform(60, 260) * k
+                b["vy"] += 2200 * k * dt
+                b["x"] += b["vx"] * dt
+                b["y"] += b["vy"] * dt
+                if b["y"] + b["h"] > it["y"]:
+                    b["y"], b["vy"], b["vx"] = it["y"] - b["h"], -b["vy"] * .3, b["vx"] * .7
+            drop = max(0.0, 1 - (it["t"] - b["t0"]) / .15) * 24 * k
+            x, y = b["x"] - ox, b["y"] - oy - drop
+            c.create_rectangle(x, y, x + b["w"], y + b["h"], fill="#C2452D", outline="#7A2A1A", width=max(1, k))
+            c.create_line(x + b["w"] * .5, y, x + b["w"] * .5, y + b["h"] * .5, fill="#7A2A1A", width=max(1, k))
+            top = (x + b["w"] / 2, y)
+        if len(it["bricks"]) >= 6 and not falling and top:   # flag on top: shipped!
+            x, y = top
+            c.create_line(x, y, x, y - 3 * P, fill="#555555", width=max(2, 2 * k))
+            c.create_polygon(x, y - 3 * P, x + 2 * P, y - 2.5 * P, x, y - 2 * P, fill=ORANGE, outline="")
+        _ = ground
+
+    def d_hole(self, c, it, dt, ox, oy):
+        k = self.pet.k
+        w = it["w"] * min(1, (it["life"] - it["t"]) / 1.5)
+        if w < 2:
+            return
+        x, y = it["x"] - ox, it["y"] - oy
+        c.create_oval(x - w / 2, y - w * .18, x + w / 2, y + w * .18, fill="#2A1A10", outline="#6B4A2A", width=max(2, 2 * k))
+
+    def d_rock(self, c, it, dt, ox, oy):
+        k = self.pet.k
+        it["vy"] += 2200 * k * dt
+        it["x"] += it["vx"] * dt
+        it["y"] += it["vy"] * dt
+        s = it["s"]
+        x, y = it["x"] - ox, it["y"] - oy
+        c.create_rectangle(x - s, y - s, x + s, y + s, fill="#8A8A8A", outline="#555555")
+
+    def d_loot(self, c, it, dt, ox, oy):
+        P, t = it["P"], it["t"]
+        x = it["x"] - ox
+        y = it["y"] - oy - min(1, t / .4) * 3 * P - math.sin(t * 4) * P * .2
+        s = P * 1.2
+        what = it["what"]
+        if what == "gem":
+            c.create_polygon(x, y - s, x + s * .8, y - s * .3, x, y + s, x - s * .8, y - s * .3, fill="#5EEAD4", outline="#0F766E", width=2)
+            c.create_line(x - s * .8, y - s * .3, x + s * .8, y - s * .3, fill="#0F766E", width=2)
+        elif what == "coin":
+            c.create_oval(x - s, y - s, x + s, y + s, fill="#F5C542", outline="#B8860B", width=2)
+            c.create_text(x, y, text="₿", fill="#8A6508", font=("Segoe UI", -int(s * 1.3), "bold"))
+        elif what == "bug":
+            for i in (-1, 0, 1):
+                c.create_line(x - s * 1.1, y + i * s * .4, x + s * 1.1, y + i * s * .4, fill="#14532D", width=2)
+            c.create_oval(x - s * .7, y - s * .9, x + s * .7, y + s * .9, fill="#16A34A", outline="#14532D", width=2)
+        else:
+            c.create_oval(x - s, y - s, x + s, y + s, fill="#C8873A", outline="#8A5A24", width=2)
+            for dx, dy in ((-.4, -.3), (.35, -.1), (-.1, .4)):
+                c.create_oval(x + dx * s - 2, y + dy * s - 2, x + dx * s + 3, y + dy * s + 3, fill="#5A3A1E", outline="")
+        for i in range(4):   # sparkles
+            a = t * 3 + i * 1.57
+            sx, sy = x + math.cos(a) * s * 1.8, y + math.sin(a) * s * 1.8
+            c.create_line(sx - 4, sy, sx + 4, sy, fill="#F5C542", width=2)
+            c.create_line(sx, sy - 4, sx, sy + 4, fill="#F5C542", width=2)
+
+    def d_glitch(self, c, it, dt, ox, oy):
+        k = self.pet.k
+        x, y = it["x"] - ox, it["y"] - oy
+        for _ in range(11):
+            w = random.uniform(60, 340) * k
+            h = random.uniform(3, 18) * k
+            gx, gy = x + random.uniform(-260, 260) * k, y + random.uniform(-170, 170) * k
+            col = random.choice(("#FF004C", "#00E5FF", "#39FF14", "#FFFFFF", "#141414", "#FF00AA"))
+            c.create_rectangle(gx - w / 2, gy, gx + w / 2, gy + h, fill=col, outline="")
+        if random.random() < .5:
+            gx, gy = x + random.uniform(-150, 150) * k, y + random.uniform(-100, 100) * k
+            c.create_text(gx, gy, text=random.choice(("ERR0R", "0xDEAD", "NaN", "segfault", "undefined", "�")),
+                          fill="#39FF14", font=("Consolas", -int(18 * k), "bold"))
+
+
+class TicTacToe:
+    """Tic-tac-toe against Clawd in a little window (minimax, with personality-based mistakes)."""
+    WINS = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6))
+    BG, CELL = "#1F1E1D", "#2B2A27"
+
+    def __init__(self, pet):
+        self.pet, self.score = pet, [0, 0]
+        w = self.win = tk.Toplevel(pet.root)
+        w.title(pet.tr("ttt_title"))
+        w.attributes("-topmost", True)
+        w.resizable(False, False)
+        w.configure(bg=self.BG)
+        try:
+            w.iconbitmap(ICON)
+        except Exception:
+            pass
+        self.msg = tk.Label(w, bg=self.BG, fg="#F5F4EF", font=("Segoe UI", 12, "bold"))
+        self.msg.pack(pady=(12, 2), padx=14)
+        self.sc = tk.Label(w, bg=self.BG, fg="#A8A29E", font=("Segoe UI", 9))
+        self.sc.pack()
+        grid = tk.Frame(w, bg="#3A3835")
+        grid.pack(padx=16, pady=10)
+        self.btn = []
+        for i in range(9):
+            b = tk.Label(grid, text=" ", width=3, font=("Segoe UI", 26, "bold"), bg=self.CELL, fg="#F5F4EF", cursor="hand2")
+            b.grid(row=i // 3, column=i % 3, padx=2, pady=2, ipadx=6, ipady=2)
+            b.bind("<Button-1>", lambda e, i=i: self.play(i))
+            b.bind("<Enter>", lambda e, b=b, i=i: b.config(bg="#3D3B37") if not self.b[i] and not self.over else None)
+            b.bind("<Leave>", lambda e, b=b, i=i: b.config(bg=self.CELL) if not self.over else None)
+            self.btn.append(b)
+        again = tk.Label(w, text=pet.tr("ttt_again"), bg=ORANGE, fg="white", font=("Segoe UI", 10, "bold"), padx=14, pady=5,
+                         cursor="hand2")
+        again.pack(pady=(0, 14))
+        again.bind("<Button-1>", lambda e: self.reset())
+        w.protocol("WM_DELETE_WINDOW", self.close)
+        cx, cy = pet.pet_center()
+        w.geometry(f"+{int(max(0, cx - 170 * pet.k))}+{int(max(0, cy - 420 * pet.k))}")
+        self.reset()
+
+    def reset(self):
+        self.b, self.over, self.my_turn = [""] * 9, False, True
+        for x in self.btn:
+            x.config(text=" ", bg=self.CELL)
+        self.msg.config(text=self.pet.tr("ttt_you"))
+        self.sc.config(text=self.pet.tr("ttt_score", a=self.score[0], b=self.score[1]))
+
+    def winner(self, b):
+        for a, c, d in self.WINS:
+            if b[a] and b[a] == b[c] == b[d]:
+                return b[a], (a, c, d)
+        return ("draw", ()) if all(b) else (None, ())
+
+    def put(self, i, m):
+        self.b[i] = m
+        self.btn[i].config(text=m, fg=ORANGE if m == "X" else "#8AB4F8", bg=self.CELL)
+
+    def play(self, i):
+        if self.over or not self.my_turn or self.b[i]:
+            return
+        self.put(i, "X")
+        self.pet.sfx("pop", .5)
+        if not self.check():
+            self.my_turn = False
+            self.msg.config(text=self.pet.tr("ttt_thinking"))
+            if self.pet.state in ("idle", "walk", "look", "think", "hang"):
+                self.pet.set_state("think", 1)
+            self.win.after(random.randint(450, 900), self.ai)
+
+    def ai(self):
+        if self.over or not self.win.winfo_exists():
+            return
+        empty = [i for i in range(9) if not self.b[i]]
+        oops = {"sweet": .45, "lazy": .4, "balanced": .25, "hyper": .25, "naughty": .1}.get(self.pet.cfg.get("personality"), .25)
+        j = random.choice(empty) if random.random() < oops else self.best()
+        self.put(j, "O")
+        self.pet.sfx("tok", .5)
+        self.my_turn = True
+        if not self.check():
+            self.msg.config(text=self.pet.tr("ttt_you"))
+
+    def best(self):
+        def mm(b, me, depth):
+            w, _ = self.winner(b)
+            if w == "O":
+                return 10 - depth
+            if w == "X":
+                return depth - 10
+            if w == "draw":
+                return 0
+            sc = []
+            for i in range(9):
+                if not b[i]:
+                    b[i] = "O" if me else "X"
+                    sc.append(mm(b, not me, depth + 1))
+                    b[i] = ""
+            return max(sc) if me else min(sc)
+        best, bs = None, -99.0
+        for i in range(9):
+            if not self.b[i]:
+                self.b[i] = "O"
+                v = mm(self.b, False, 1) + random.random() * .1
+                self.b[i] = ""
+                if v > bs:
+                    best, bs = i, v
+        return best
+
+    def check(self):
+        w, line = self.winner(self.b)
+        if not w:
+            return False
+        self.over = True
+        for i in line:
+            self.btn[i].config(bg="#5A3A28")
+        if w == "X":
+            self.score[0] += 1
+            self.msg.config(text=self.pet.tr("ttt_won"))
+        elif w == "O":
+            self.score[1] += 1
+            self.msg.config(text=self.pet.tr("ttt_lost"))
+        else:
+            self.msg.config(text=self.pet.tr("ttt_drew"))
+        self.sc.config(text=self.pet.tr("ttt_score", a=self.score[0], b=self.score[1]))
+        self.pet.ttt_result(w)
+        return True
+
+    def close(self):
+        if self.pet.game and self.pet.game.get("win") is self:
+            self.pet.game = None
+        self.win.destroy()
+
+
 class Ball:
-    """A throwable toy ball living in its own little transparent window."""
+    """A throwable toy ball in its own little window: bounces on the floor and on windows, and on Clawd's head."""
 
     def __init__(self, pet):
         self.pet = pet
@@ -4927,6 +6362,7 @@ class Ball:
         self.x = min(max(self.x, L_ + self.size), R_ - self.size)
         self.vx, self.vy = random.uniform(-300, 300) * k, 0.0
         self.drag = None
+        self.plat, self.plat_rect, self.air = None, None, True
         w = self.win = tk.Toplevel(pet.root)
         w.overrideredirect(True)
         w.attributes("-topmost", True)
@@ -4944,7 +6380,16 @@ class Ball:
         c.bind("<ButtonRelease-1>", self.release)
 
     def press(self, e):
+        p = self.pet
+        if self.air and p.time - p.last_kick_t < 3:   # caught his pass!
+            p.fetch_n += 1
+            p.last_kick_t = -9.0
+            p.sfx("coin", .5)
+            p.spawn("heart")
+            if p.fetch_n >= 2:
+                p.say(p.line("fetch_n", n=p.fetch_n))
         self.drag = [(time.perf_counter(), e.x_root, e.y_root)]
+        self.plat = None
 
     def motion(self, e):
         if self.drag is not None:
@@ -4958,31 +6403,83 @@ class Ball:
             dt = max(t1 - t0, .016)
             self.vx, self.vy = (x1 - x0) / dt, (y1 - y0) / dt
         self.drag = None
-        if self.pet.surf == "floor" and self.pet.state in ("idle", "walk", "think", "play") and not self.pet.stay:
+        self.plat = None
+        if self.pet.surf == "floor" and self.pet.state in ("idle", "walk", "think", "play", "look", "lounge") and not self.pet.stay:
             self.pet.set_state("play", 10)
 
     def step(self, dt):
-        k = self.pet.k
-        L_, T_, R_, B_ = self.pet.mon
+        p, k = self.pet, self.pet.k
+        L_, T_, R_, B_ = p.mon
         r = self.size / 2
         if self.drag is None:
+            ground = B_
+            if self.plat:   # resting on a window: ride along with it
+                h = self.plat
+                if not user32.IsWindow(h) or user32.IsIconic(h):
+                    self.plat = None
+                else:
+                    nr = frame_rect(h)
+                    self.x += nr[0] - self.plat_rect[0]
+                    self.y += nr[1] - self.plat_rect[1]
+                    self.plat_rect = nr
+                    if nr[0] <= self.x <= nr[2] and nr[1] > T_ + 6:
+                        ground = nr[1]
+                    else:
+                        self.plat = None
+            ox, oy = self.x, self.y
             self.vy += 2600 * k * dt
             self.x += self.vx * dt
             self.y += self.vy * dt
-            if self.y >= B_:
-                self.y = B_
+            if p.cfg["windows"]:
+                if self.vy > 0:   # land on window tops
+                    for h, wr, _, _ in p.windows:
+                        if h != self.plat and T_ + 6 < wr[1] < ground and oy - 1 <= wr[1] <= self.y and wr[0] <= self.x <= wr[2] \
+                                and top_visible(h, self.x, wr[1]):
+                            ground, self.plat, self.plat_rect = wr[1], h, wr
+                if abs(self.vx) > 50 * k:   # bounce off window sides (a hard hit shoves the window!)
+                    cy = self.y - r
+                    for h, wr, _, _ in p.windows:
+                        if not (wr[1] < cy < wr[3]) or user32.IsZoomed(h):
+                            continue
+                        edge = None
+                        if self.vx > 0 and ox + r <= wr[0] < self.x + r:
+                            edge, px = wr[0] - r, wr[0] + 3
+                        elif self.vx < 0 and ox - r >= wr[2] > self.x - r:
+                            edge, px = wr[2] + r, wr[2] - 3
+                        if edge is not None and top_visible(h, px, cy - 4):
+                            if abs(self.vx) > 1700 * k:
+                                p.shove_window(h, self.vx * .3, 0, .12)
+                            self.x, self.vx = edge, -self.vx * .55
+                            p.sfx("kick", .3)
+                            break
+            if self.y >= ground:
+                self.y = ground
+                if ground >= B_:
+                    self.plat = None
                 if abs(self.vy) > 150 * k:
                     self.vy = -self.vy * .62
                     if abs(self.vy) > 400 * k:
-                        self.pet.sfx("kick", .35)
+                        p.sfx("kick", .35)
                 else:
                     self.vy = 0
                 self.vx *= .985 ** (dt * 60)
+            self.air = self.y < ground - 2
             if self.x < L_ + r or self.x > R_ - r:
                 self.x = min(max(self.x, L_ + r), R_ - r)
                 self.vx = -self.vx * .7
             if self.y - self.size < T_:
                 self.y, self.vy = T_ + self.size, abs(self.vy) * .5
+            # hit Clawd?
+            pb = getattr(p, "pbox", None)
+            if pb and p.state != "drag" and not p.hidden and p.time - p.last_kick_t > .4:
+                x1, y1, x2, y2 = p.wx + pb[0], p.wy + pb[1], p.wx + pb[2], p.wy + pb[3]
+                cy = self.y - r
+                if x1 - r < self.x < x2 + r and y1 - r < cy < y2 + r:
+                    sp = math.hypot(self.vx, self.vy)
+                    pcx = (x1 + x2) / 2
+                    toward = (pcx - self.x) * self.vx > 0 or (self.vy > 0 and cy < y1 + (y2 - y1) * .5)
+                    if sp > 900 * k and toward and p.cooldown("ballhit", .6):
+                        p.ball_hit(self, sp)
         self.win.geometry(f"{self.size}x{self.size}+{int(self.x - r)}+{int(self.y - self.size)}")
 
 

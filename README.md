@@ -42,7 +42,24 @@ thing is portable: copy the folder, share it, done.
   fix writing, write a reply).
 - **Smart**: reacts to the app you're using, songs playing, copied error messages, typing bursts, being AFK,
   high CPU, low battery and late nights; reminds you to stretch, rest your eyes and drink water.
-- **Fun**: rock-paper-scissors, jokes, compliments, motivation, backflips, sneezes, moonwalks, peekaboo,
+- **Personality** (Settings or right-click menu): Balanced, Naughty, Lazy, Hyper or Sweet. It changes what he
+  likes to do, how fast he moves, what he says and how the AI talks. He also avoids repeating himself.
+- **Mischief with your windows**: flying kicks that send a window sliding across the screen ("POW!"), stomping
+  on the window he stands on so it shakes, and hiding behind windows. He ducks behind a window's top edge or
+  its side, or sinks behind the taskbar, with half his body showing, and shouts "Boo!" when your mouse comes
+  close. "Put my windows back" undoes every shove. You can turn window mischief off in Settings.
+- **Desktop effects**: footprints, a fake screen crack when he's thrown hard (or when he "punches" the screen
+  and then fixes it with duct tape), screen glitches, laser eyes that scorch where your cursor is, doodles
+  ("Clawd was here"), confetti parties, an engineer mode that builds a brick tower (which sometimes
+  collapses), and a mining mode with a pickaxe, rocks, a hole and loot. They all draw on a click-through layer
+  that never blocks your mouse.
+- **Games**: tic-tac-toe (a minimax AI that makes mistakes depending on his personality), hide and seek (find
+  him with the mouse), catch me (he dodges and jumps over your cursor), guess the number, fetch (he passes
+  the ball to your cursor; catch it for a streak) and rock-paper-scissors. The ball bounces on window tops,
+  bounces off their sides (a hard throw shoves the window) and bonks him on the head.
+- **Window awareness**: he notices new windows, complains when the window he stands on disappears, rides
+  moving windows, and won't kick the window you're typing in.
+- **Fun**: jokes, compliments, motivation, backflips, sneezes, moonwalks, peekaboo,
   a ball to play with, cookies, a daily diary of how many times you petted / fed / threw him, and funny
   Claude Code-style approval popups.
 
