@@ -7,9 +7,10 @@ English + Arabic.
 
 Controls
   Click / double-click     jump + quip / open chat        Ctrl+Alt+C   open chat anywhere
-  Drag + throw             he flies, bounces, sticks to walls, gets dizzy
+  Drag + throw             he tumbles, bounces, skids, sticks to walls, gets dizzy
   Rub the mouse on him     petting                         Mouse wheel  resize
-  Right-click              menu (music, tools, actions, size, language, settings)
+  Hover                    he stops and looks at you       Ctrl+Alt+M   menu anywhere
+  Right-click              menu (workout, music, YouTube, tools, games, settings)
 
 Run: double-click this file (or: pythonw clawd_pet.pyw)
 """
@@ -53,7 +54,7 @@ try:
 except Exception:
     pygame = None
 
-APP, VERSION = "Clawd", "1.0.0"
+APP, VERSION = "Clawd", "1.1.0"
 ORANGE, BLACK, KEY, CREAM = "#D97757", "#141414", "#ff00fe", "#F4EFE8"
 HOME = os.path.expanduser("~")
 FROZEN = getattr(sys, "frozen", False)
@@ -78,6 +79,7 @@ def _data_dir():
 DATA = _data_dir()
 CFG_PATH = os.path.join(DATA, "config.json")
 NOTES_PATH = os.path.join(DATA, "notes.txt")
+CHAT_PATH = os.path.join(DATA, "chat.json")
 CACHE = os.path.join(DATA, "cache")
 OLD_CFG = os.path.join(HOME, ".clawd_pet.json")
 ICON = os.path.join(RES_DIR, "assets", "clawd.ico")
@@ -110,7 +112,8 @@ FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "clau
 
 DEFAULT_CFG = dict(scale=1.0, lang="auto", sound=True, talk=True, sfx_vol=0.7, music_vol=0.45, ask_rate="normal",
                    follow=True, climb=True, windows=True, fly=True, smart=True, reminders=True, provider="anthropic",
-                   brains={}, trust=[], first_run=True)
+                   brains={}, trust=[], first_run=True, name="", memory=[], stats={}, focus_guard=True,
+                   workout=True, asked_name=False)
 ASK_RATES = {"often": (25, 50), "normal": (60, 120), "rare": (180, 360), "off": None}
 
 # ============================================================== text (English / Arabic)
@@ -179,7 +182,22 @@ T = {
     "help": ("Click: jump  |  Double-click / Ctrl+Alt+C: chat  |  Drag: throw\nRub: pet  |  Wheel: resize  |  Right-click: menu",
              "نقرة: قفزة  |  نقرتان / Ctrl+Alt+C: محادثة  |  سحب: رمي\nمسح بالفأرة: تدليل  |  العجلة: الحجم  |  زر أيمن: القائمة"),
     "timer_ask": ("Minutes?", "كم دقيقة؟"), "note_ask": ("Your note:", "ملاحظتك:"),
-    "tracks": (("Clawd Groove", "Pixel Party", "Lo-fi Nap"), ("إيقاع كلود", "حفلة البكسل", "قيلولة هادئة")),
+    "name_lbl": ("Your name", "اسمك"), "workout": ("Workout", "تمارين"),
+    "ex_all": ("Full workout (do it with me!)", "تمرين كامل (تمرّن معي!)"),
+    "ex_pushups": ("Push-ups", "ضغط"), "ex_squats": ("Squats", "سكوات"), "ex_jacks": ("Jumping jacks", "قفز فتح وضم"),
+    "ex_lift": ("Lift weights", "رفع أثقال"), "ex_run": ("Jog in place", "جري في المكان"), "ex_yoga": ("Yoga", "يوغا"),
+    "yt": ("Play from YouTube...", "شغّل من يوتيوب..."), "yt_ask": ("Song or video to play on YouTube:", "اسم الأغنية أو الفيديو على يوتيوب:"),
+    "weather": ("Weather", "الطقس"), "stats": ("Clawd's diary (stats)", "مذكرات كلود (إحصائيات)"),
+    "games": ("Games", "ألعاب"), "rps": ("Rock, paper, scissors", "حجر ورقة مقص"), "motivate": ("Motivate me", "حفّزني"),
+    "compliment": ("Say something nice", "قل شيئاً لطيفاً"), "shuffle": ("Shuffle all", "تشغيل عشوائي"),
+    "focus_lbl": ("Focus guard (scold me for YouTube during pomodoro)", "حارس التركيز (يوبخني على يوتيوب أثناء البومودورو)"),
+    "workout_lbl": ("Workout breaks (exercise with me)", "استراحات تمارين (تمرّن معي)"),
+    "memory_lbl": ("Memories about you: {n}", "ذكريات عنك: {n}"), "forget_all": ("Forget all", "انسَ الكل"),
+    "hungry_lbl": ("hunger {g}%", "الجوع {g}%"),
+    "tracks": (("Clawd Groove", "Pixel Party", "Lo-fi Nap", "Desert Dreams", "Synthwave Drive", "Boss Battle",
+                "Happy Hop", "Workout Pump", "Lullaby"),
+               ("إيقاع كلود", "حفلة البكسل", "قيلولة هادئة", "أحلام الصحراء", "رحلة سينث", "معركة الزعيم",
+                "قفزة سعيدة", "حماس التمرين", "تهويدة")),
 }
 
 L = {  # random lines (English, Arabic)
@@ -271,7 +289,7 @@ L = {  # random lines (English, Arabic)
     "come": (["Coming!", "On my way!", "Wait for meee!"], ["جاي!", "في الطريق!", "انتظرنييي!"]),
     "arrived": (["Here I am!", "Ta-da! You called?"], ["ها أنا ذا!", "تادا! ناديتني؟"]),
     "fly": (["Propeller hat: ON!", "I believe I can fly!", "To the sky!"], ["قبعة المروحة: تعمل!", "أنا أطير!", "إلى السماء!"]),
-    "land": (["Landing gear down!", "Coming in for a landing."], ["أنزل العجلات!", "أستعد للهبوط."]),
+    "land_fly": (["Landing gear down!", "Coming in for a landing."], ["أنزل العجلات!", "أستعد للهبوط."]),
     "sneeze_a": (["Ah... ah..."], ["آآ... آآ..."]), "sneeze": (["ACHOO!", "ACHOOOO! Sorry. Pixel dust."], ["أتشوو!", "أتشووو! آسف، غبار بكسلات."]),
     "peek": (["Peekaboo!", "Boo! Did I scare you?"], ["بخ! وجدتك!", "بووو! خوفتك؟"]),
     "web": (["Just hanging around.", "Spider-Clawd, Spider-Clawd...", "Nice view from up here!"],
@@ -298,7 +316,79 @@ L = {  # random lines (English, Arabic)
     "screenshot": (["Say cheese!"], ["ابتسم للكاميرا!"]),
     "hidden": (["Hiding! Press Ctrl+Alt+H to bring me back."], ["سأختبئ! اضغط Ctrl+Alt+H لإعادتي."]),
     "volume": (["Volume adjusted!"], ["تم تعديل الصوت!"]),
+    # v1.1
+    "ex_start": (["Let's go! {x} time!", "Workout mode: ON. {x}!", "Watch these muscles. {x}!"],
+                 ["يلا! وقت {x}!", "وضع التمرين: يعمل. {x}!", "شوف العضلات. {x}!"]),
+    "ex_next": (["Next: {x}!", "Keep going! {x}!"], ["التالي: {x}!", "كمّل! {x}!"]),
+    "ex_mid": (["Feel the burn!", "Light weight, baby!", "No pain, no gain!", "Almost there!", "Do you even lift?"],
+               ["حاسس بالحرق!", "خفيف خفيف!", "بدون تعب ما في نتيجة!", "قربنا!", "أنت ترفع أثقال أصلاً؟"]),
+    "ex_done": (["Done! I'm basically a gym rat now. Your turn{c}: 10 squats!", "Workout complete! Drink water{c}. Then 10 push-ups. Go!",
+                 "Phew! Now YOU stand up and stretch{c}. I'm watching."],
+                ["خلصنا! صرت وحش جيم. دورك{c}: 10 سكوات!", "انتهى التمرين! اشرب ماء{c}، وبعدين 10 ضغط. يلا!",
+                 "أوف! الحين أنت قوم وتمدد{c}. أنا أراقبك."]),
+    "ex_invite": (["You've been sitting for 45 minutes{c}! Workout break - do it with me!"],
+                  ["لك 45 دقيقة جالس{c}! استراحة تمارين - تمرّن معي!"]),
+    "yoga": (["Ommmm...", "Inner peace...", "I am one with the desktop."], ["أوممم...", "سلام داخلي...", "أنا والسطح المكتب واحد."]),
+    "name_set": (["Nice to meet you, {n}! I'll remember that.", "{n}! What a great name. Saved!"],
+                 ["تشرفت فيك يا {n}! سأتذكر اسمك.", "{n}! اسم جميل. حفظته!"]),
+    "ask_name": (["By the way... what's your name? Double-click me and tell me!"], ["بالمناسبة... ما اسمك؟ انقر علي مرتين وقل لي!"]),
+    "yt_search": (["Searching YouTube for \"{q}\"...", "One sec, finding \"{q}\"..."], ["أبحث في يوتيوب عن \"{q}\"...", "لحظة، أدور على \"{q}\"..."]),
+    "yt_play": (["Playing \"{q}\" on YouTube! Dance time!", "Here's \"{q}\"! *starts dancing*"],
+                ["شغلت \"{q}\" على يوتيوب! وقت الرقص!", "تفضل \"{q}\"! *يبدأ بالرقص*"]),
+    "yt_fail": (["I couldn't reach YouTube, so I opened the search for you."], ["ما قدرت أوصل ليوتيوب، فتحت لك البحث."]),
+    "weather_wait": (["Checking the sky...", "Looking out the window..."], ["أشوف السماء...", "أطل من الشباك..."]),
+    "weather_fail": (["I couldn't get the weather right now."], ["ما قدرت أجيب الطقس الآن."]),
+    "hungry": (["I'm hungry... cookie?", "*stomach growls* Feed me?", "Is it snack time? It's snack time."],
+               ["أنا جوعان... كعكة؟", "*بطني تقرقر* أطعمني؟", "وقت الوجبة الخفيفة؟ أكيد وقتها."]),
+    "focus_scold": (["Hey{c}! We're FOCUSING. Close that!", "I saw that{c}. Back to work! *taps foot*",
+                     "Pomodoro says: no {x} right now!"],
+                    ["هيه{c}! نحن نركز! سكّر هذا!", "شفتك{c}. ارجع للشغل! *يدق برجله*", "البومودورو يقول: لا {x} الآن!"]),
+    "thrown": (["That's throw #{t} today. I'm keeping count.", "Throw #{t}! My lawyer will hear about this.",
+                "#{t}... I'm starting to like this."],
+               ["هذه الرمية رقم {t} اليوم. أنا أعد.", "رمية رقم {t}! محاميّ سيسمع بهذا.", "رقم {t}... بدأت أحبها."]),
+    "flop": (["Ow. I'm okay!", "Ta-da! ...ow.", "I meant to do that."], ["آي. أنا بخير!", "تادا! ...آي.", "كنت أقصد هذا."]),
+    "bounce": (["Boing!", "Wheee-boing!"], ["بوينغ!", "ويييي-بوينغ!"]),
+    "slide": (["Wheeeee~", "Skrrrt!"], ["وييييي~", "سكررررت!"]),
+    "flip": (["Backflip!", "Did you see that?!"], ["شقلبة!", "شفت هذي؟!"]),
+    "notice": (["Hm? Need me?", "Oh, hi!", "*looks at you*"], ["همم؟ تحتاجني؟", "أوه، أهلاً!", "*ينظر إليك*"]),
+    "wave": (["Hi{c}!", "Hey there{c}!", "Oh, you're here{c}!"], ["أهلاً{c}!", "هلا{c}!", "أوه، أنت هنا{c}!"]),
+    "motivate": (["You're doing great{c}. Seriously.", "Small steps still move you forward.", "Done is better than perfect. Ship it!",
+                  "Every expert was once a beginner who didn't quit.", "Your future self will thank you for this.",
+                  "Bugs fear you{c}. Go get them!"],
+                 ["أنت رائع{c}. بجد.", "خطوات صغيرة تقدمك للأمام.", "المنجز أفضل من المثالي. انشرها!",
+                  "كل خبير كان مبتدئاً لم يستسلم.", "نفسك المستقبلية ستشكرك على هذا.", "الأخطاء تخاف منك{c}. روح عليها!"]),
+    "compliment": (["You have excellent taste in desktop pets.", "Your code is cleaner than my pixels{c}.",
+                    "You're absolutely right! (I mean it this time.)", "If you were a function, you'd be pure.",
+                    "You make this desktop a better place{c}."],
+                   ["ذوقك ممتاز في اختيار الحيوانات الأليفة.", "كودك أنظف من بكسلاتي{c}.", "معك حق تماماً! (هذه المرة بجد)",
+                    "لو كنت دالة، كنت دالة نقية.", "أنت تجعل هذا السطح مكاناً أجمل{c}."]),
+    "rps_pick": (["I pick {m}! {r}"], ["أنا اخترت {m}! {r}"]),
+    "rps_win": (["I WIN! *victory dance*", "Haha, Clawd wins!"], ["فزت! *رقصة النصر*", "هههه، كلود فاز!"]),
+    "rps_lose": (["Noooo! You win{c}.", "Rematch! I demand a rematch!"], ["لااا! أنت فزت{c}.", "إعادة! أطالب بإعادة!"]),
+    "rps_tie": (["Tie! Great minds think alike."], ["تعادل! العقول الكبيرة تتشابه."]),
+    "rps_ask": (["Rock, paper or scissors? Type it in chat!"], ["حجر، ورقة أو مقص؟ اكتبها في المحادثة!"]),
+    "remembered": (["Got it, I'll remember that!"], ["تمام، سأتذكر هذا!"]),
+    "forgot": (["Okay, forgotten. *pixel amnesia*"], ["تمام، نسيت. *فقدان ذاكرة بكسلي*"]),
+    "typing": (["You type fast! Let me code too.", "Keyboard warrior! I'll help."], ["تكتب بسرعة! خليني أبرمج معك.", "محارب الكيبورد! سأساعدك."]),
+    "sleep_wall": (["Zzz... (yes, I sleep upside down. Like a bat.)"], ["خخخ... (نعم أنام مقلوباً. مثل الخفاش.)"]),
+    "eyes": (["20-20-20 rule{c}: look at something 20 feet away for 20 seconds!"],
+             ["قاعدة 20-20-20{c}: انظر لشيء بعيد لمدة 20 ثانية!"]),
+    "cant": (["I can't do that one right now.", "Hmm, nothing to do that with here."], ["ما أقدر أسوي هذا الآن.", "همم، ما في شيء أسوي عليه هذا هنا."]),
+    "no_windows": (["No windows to jump on! Open one and I'll parkour."], ["ما في نوافذ أقفز عليها! افتح وحدة وأسوي باركور."]),
+    "already": (["I'm already up here!"], ["أنا فوق أصلاً!"]),
 }
+L["welcome"][0].extend(["Welcome back{c}!", "There you are{c}! I kept your seat warm."])
+L["welcome"][1].extend(["أهلاً بعودتك{c}!", "ها أنت{c}! دفّيت لك الكرسي."])
+L["petted"][0].extend(["Best human{c}!", "*happy pixel noises*"])
+L["petted"][1].extend(["أفضل إنسان{c}!", "*أصوات بكسل سعيدة*"])
+L["quips"][0].extend(["Say 'workout' and I'll do push-ups!", "Ask me to play any song from YouTube!",
+                      "Tell me your name in Settings. I'm curious!", "I can search the web for you. Just ask!"])
+L["quips"][1].extend(["قل 'تمرين' وأسوي ضغط!", "اطلب مني أي أغنية من يوتيوب!", "اكتب اسمك في الإعدادات، أنا فضولي!",
+                      "أقدر أبحث في الإنترنت لك. بس اسأل!"])
+EXERCISES = {  # kind: (seconds per rep, reps)
+    "jacks": (0.62, 10), "pushups": (1.15, 8), "squats": (1.35, 8), "lift": (1.5, 6), "run": (0.32, 24), "yoga": (6.0, 1)}
+ROUTINE = ["jacks", "pushups", "squats", "lift", "run", "yoga"]
+DISTRACT_RE = r"youtube|netflix|tiktok|instagram|facebook|twitter|\bx\.com|reddit|twitch|shahid|9gag|prime video"
 L["quips"][0].extend(["Clawd.exe has stopped responding... just kidding!", "Right-click me > Funny stuff. Trust me.",
                       "Say 'stay' and I'll freeze. Say 'fly' and I'll fly!", "I put the 'fun' in 'function'."])
 L["quips"][1].extend(["كلود توقف عن الاستجابة... أمزح!", "زر أيمن > أشياء مضحكة. ثق بي.",
@@ -372,6 +462,8 @@ SPR = {
     "drop": ([".X.", "XXX", "XXX", ".X."], "#5DADE2"),
     "star": ([".X.", "XXX", ".X."], "#F5C542"),
     "spark": (["X.X", ".X.", "X.X"], "#F5C542"),
+    "dust": ([".XX.", "XXXX", ".XX."], "#CDBFAE"),
+    "cookie_t": ([".XXX.", "XX.XX", "XXXXX", "X.XXX", ".XXX."], "#C8873A"),
 }
 COOKIE = [".BBBB.", "BBdBBB", "BBBBdB", "BdBBBB", "BBBdBB", ".BBBB."]
 BALL = ["..YYYY..", ".YYWYYY.", "YYWYYYYY", "YYYYYYYY", "GGYYYYGG", "YGGGGGGY", ".YYYYYY.", "..YYYY.."]
@@ -570,9 +662,9 @@ RATE = 22050
 
 
 def _write_wav(path, samples):
-    peak = max(1e-6, max(abs(min(samples)), abs(max(samples))))
-    g = 0.9 / peak if peak > 0.9 else 1.0
-    data = array("h", (int(max(-1, min(1, s * g)) * 32767) for s in samples))
+    peak = max(1e-6, max(samples), -min(samples))
+    g = (0.92 / peak if peak > 0.92 else 1.0) * 32767
+    data = array("h", [int(v * g) for v in samples])
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
@@ -620,69 +712,249 @@ SFX = {
     "sneeze": ([((500, 900), .25), ("noise", .18), ((300, 120), .1)], "sine", .45),
     "web": ([((700, 350), .25)], "sine", .25), "peek": ([((300, 750), .08), ((750, 400), .1)], "sine", .4),
     "stay": ([(880, .06), (660, .1)], "sine", .35), "coin": ([(1568, .05), (2093, .05)] * 3, "sine", .25),
+    "huff": ([("noise", .07)], "square", .1), "boing": ([((220, 700), .09), ((700, 330), .12)], "sine", .4),
+    "whoosh": ([("noise", .16)], "square", .07), "flop": ([((160, 70), .1), ("noise", .04)], "sine", .55),
+    "win": ([(784, .08), (988, .08), (1175, .08), (1568, .25)], "square", .16),
 }
-TRACKS = [  # bpm, chord progression (midi), style
-    (112, [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]], "pop", 3),
-    (138, [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]], "party", 7),
-    (78, [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]], "lofi", 11),
+SCALES = {"major": [0, 2, 4, 5, 7, 9, 11], "minor": [0, 2, 3, 5, 7, 8, 10], "hijaz": [0, 1, 4, 5, 7, 8, 10]}
+# same order as T["tracks"]: bpm, root (midi), scale, chord degrees (one per bar), style, seed
+TRACKS = [
+    (112, 60, "major", [0, 4, 5, 3], "pop", 3),
+    (138, 57, "minor", [0, 5, 2, 6], "party", 7),
+    (80, 53, "major", [0, 5, 1, 4], "lofi", 11),
+    (100, 62, "hijaz", [0, 0, 6, 0], "desert", 5),
+    (104, 57, "minor", [0, 5, 3, 6], "synthwave", 21),
+    (160, 52, "minor", [0, 0, 5, 6], "boss", 13),
+    (124, 60, "major", [0, 3, 4, 3], "hop", 17),
+    (128, 55, "minor", [0, 5, 6, 4], "workout", 23),
+    (66, 65, "major", [0, 3, 0, 4], "lullaby", 2),
 ]
+DRUMS = {  # 16 steps per bar: kick, snare/clap, hat (D/T = darbuka doum/tak)
+    "pop": ("x.....x.x.......", "....x.......x...", "x.x.x.x.x.x.x.x."),
+    "party": ("x...x...x...x...", "....x.......x...", "..x...x...x...x."),
+    "lofi": ("x......x..x.....", "....x.......x...", "x.x.x.x.x.x.x.x."),
+    "desert": ("D.....D.........", "....T.T.....T.T.", "..x.......x....x"),
+    "synthwave": ("x...x...x...x...", "....x.......x...", "x.x.x.x.x.x.x.x."),
+    "boss": ("x.x.x.x.x.x.x.x.", "....x.......x..x", "xxxxxxxxxxxxxxxx"),
+    "hop": ("x..x..x...x.x...", "....x.......x...", "x.xxx.xxx.xxx.xx"),
+    "workout": ("x...x...x...x...", "....x.......x...", "..x...x...x...x."),
+    "lullaby": ("................", "................", "................"),
+}
+TN = 2048
+WT = {"sin": [math.sin(2 * math.pi * i / TN) for i in range(TN)],
+      "tri": [4 * abs(i / TN - .5) - 1 for i in range(TN)],
+      "sq": [1.0 if i < TN // 2 else -1.0 for i in range(TN)],
+      "pulse": [1.0 if i < TN // 4 else -1.0 for i in range(TN)],
+      "saw": [2 * i / TN - 1 for i in range(TN)]}
+WT["box"] = [WT["sin"][i] * .7 + WT["sin"][(i * 2) % TN] * .3 for i in range(TN)]   # music box
+WT["organ"] = [WT["sin"][i] * .6 + WT["sin"][(i * 2) % TN] * .25 + WT["sin"][(i * 3) % TN] * .15 for i in range(TN)]
+_rng = random.Random(1)
+NOISE = [_rng.uniform(-1, 1) for _ in range(RATE)]
+HISS = [NOISE[i] - NOISE[i - 1] for i in range(RATE)]  # brighter noise for hats
+_ENV = {}
 
 
-def synth_track(path, bpm, prog, style, seed):
+def _env(cnt, shape):
+    key = (cnt, shape)
+    if key not in _ENV:
+        a = max(1, min(cnt // 3, int(RATE * (.03 if shape == "pad" else .004))))
+        r = max(1, min(cnt // 3, int(RATE * (.25 if shape == "pad" else .02))))
+        if shape == "pluck":
+            d = -5.0 / cnt
+            e = [min(1.0, i / a) * math.exp(d * i) for i in range(cnt)]
+        elif shape == "hit":
+            d = -9.0 / cnt
+            e = [math.exp(d * i) for i in range(cnt)]
+        else:  # pad / organ: attack, sustain, release
+            e = [min(1.0, i / a, (cnt - i) / r) for i in range(cnt)]
+        if len(_ENV) > 400:
+            _ENV.clear()
+        _ENV[key] = e
+    return _ENV[key]
+
+
+def synth_track(path, bpm, root, scale, degs, style, seed):
     rnd = random.Random(seed)
-    beat, bars = 60 / bpm, 8
-    n = int(bars * 4 * beat * RATE) + RATE // 2
+    sc = SCALES[scale]
+    beat = 60 / bpm
+    st = beat / 4                                   # one 16th step
+    bars = 16
+    n = int(bars * 16 * st * RATE) + RATE
     buf = array("f", bytes(4 * n))
+    add = operator.add
     hz = lambda m: 440 * 2 ** ((m - 69) / 12)
+    swing = .33 if style in ("lofi", "hop") else 0
 
-    def tone(t0, dur, f, kind, vol, sweep=None):
-        i0, cnt, ph = int(t0 * RATE), int(dur * RATE), 0.0
-        for i in range(cnt):
-            j = i0 + i
-            if j >= n:
-                break
-            k = i / cnt
-            env = min(1.0, i / 60) * (1 - k) ** 1.6
-            fr = f if sweep is None else f + (sweep - f) * k
-            ph += fr / RATE
-            p = ph % 1
-            if kind == "sq":
-                v = 1.0 if p < 0.25 else -1.0
-            elif kind == "tri":
-                v = 4 * abs(p - 0.5) - 1
-            else:
-                v = math.sin(2 * math.pi * p)
-            buf[j] += v * vol * env
+    def t_of(step):  # step index (16ths) -> seconds, with swing on off-16ths
+        return step * st + (st * swing if step % 2 else 0)
 
-    def noise(t0, dur, vol):
+    def mix(i0, seg):
+        i1 = min(n, i0 + len(seg))
+        if i1 > i0:
+            buf[i0:i1] = array("f", map(add, buf[i0:i1], seg[:i1 - i0]))
+
+    def tone(t0, dur, f, wave, vol, shape="pluck", vib=0.0):
         i0, cnt = int(t0 * RATE), int(dur * RATE)
-        for i in range(cnt):
-            if i0 + i < n:
-                buf[i0 + i] += rnd.uniform(-1, 1) * vol * (1 - i / cnt) ** 3
+        if cnt < 8 or i0 >= n:
+            return
+        tbl, env = WT[wave], _env(cnt, shape)
+        inc = f * TN / RATE
+        if vib:
+            w = 2 * math.pi * 5.5 / RATE
+            seg = [tbl[int(i * inc + vib * TN * math.sin(w * i) / 40) % TN] * e * vol for i, e in enumerate(env)]
+        else:
+            seg = [tbl[int(i * inc) % TN] * e * vol for i, e in enumerate(env)]
+        mix(i0, seg)
 
-    motif = [rnd.choice([None, 0, 1, 2, 2, 1, 0, 3]) for _ in range(16)]
-    lead_kind, lead_vol = ("sin", .16) if style == "lofi" else ("sq", .11)
+    def kick(t0, vol=.8, f0=150, f1=42, dur=.18):
+        cnt = int(dur * RATE)
+        kk = (f1 - f0) / (2 * cnt)
+        env = _env(cnt, "hit")
+        mix(int(t0 * RATE), [math.sin(2 * math.pi * (f0 * i + kk * i * i) / RATE) * e * vol for i, e in enumerate(env)])
+
+    def noise(t0, dur, vol, bright=False):
+        cnt = int(dur * RATE)
+        src, o = (HISS if bright else NOISE), rnd.randrange(RATE - cnt - 1)
+        env = _env(cnt, "hit")
+        mix(int(t0 * RATE), [src[o + i] * e * vol for i, e in enumerate(env)])
+
+    def note(deg, octave=0):
+        return root + sc[deg % 7] + 12 * (deg // 7 + octave)
+
+    def chord_tones(d, size=3):
+        return [note(d + 2 * i) for i in range(size)]
+
+    # ---- melody motifs: 16 eighth-note slots over 2 bars; ints = scale steps above the chord root, '-' = hold
+    def motif(density):
+        out, cur = [], rnd.choice((0, 2, 4))
+        for i in range(16):
+            if i and rnd.random() > density:
+                out.append(None if rnd.random() < .45 else "-")
+                continue
+            cur = max(-2, min(9, cur + rnd.choice((-2, -1, -1, 1, 1, 2, 0, 3, -3))))
+            if i % 4 == 0:
+                cur = min((0, 2, 4, 7), key=lambda c: abs(c - cur))
+            out.append(cur)
+        out[15] = None
+        return out
+
+    dens = {"lofi": .5, "lullaby": .55, "desert": .7, "boss": .85, "party": .75}.get(style, .65)
+    ma, mb = motif(dens), motif(dens)
+    mb = [m + 2 if isinstance(m, int) else m for m in mb]
+    ma2 = ma[:12] + [rnd.choice((0, 4, 7)), "-", "-", None]
+    form = [ma, ma2, None, ma, mb, mb, ma, ma2] if style != "lullaby" else [ma, ma2, mb, ma2] * 2
+    lead = {"pop": ("pulse", .13), "party": ("sq", .1), "lofi": ("sin", .17), "desert": ("tri", .2),
+            "synthwave": ("saw", .08), "boss": ("sq", .1), "hop": ("pulse", .12), "workout": ("saw", .08),
+            "lullaby": ("box", .2)}[style]
+    drums = DRUMS[style]
+
     for bar in range(bars):
-        chord = prog[(bar // 2) % len(prog)]
-        for b in range(4):
-            t0 = (bar * 4 + b) * beat
-            tone(t0, beat * .95, hz(chord[0] - 12), "tri", .32)
-            if style != "lofi" and (b % 2 == 0 or style == "party"):
-                tone(t0, .14, 150, "sin", .55, sweep=45)
-            if b % 2 == 1:
-                noise(t0, .12 if style != "lofi" else .06, .16 if style != "lofi" else .07)
-            noise(t0 + beat / 2, .03, .06)
-            if style == "lofi":
-                for m in chord:
-                    tone(t0, beat * .9, hz(m), "sin", .05)
-            for half in range(2):
-                step = motif[((bar % 2) * 8 + b * 2 + half)]
-                if step is None or (bar == bars - 1 and b == 3):
-                    continue
-                m = chord[step % len(chord)] + 12 + (12 if step == 3 else 0)
-                if bar % 4 == 3 and half == 1:
-                    m += rnd.choice((-2, 2))
-                tone(t0 + half * beat / 2, beat / 2 * .9, hz(m), lead_kind, lead_vol)
+        d = degs[bar % len(degs)]
+        ch = chord_tones(d, 4 if style in ("lofi", "synthwave", "lullaby") else 3)
+        bass = ch[0] - 12 if ch[0] - 12 >= 36 else ch[0]
+        b0 = bar * 16
+        # drums
+        if not (style == "lullaby") and not (bar == 0 and style in ("lofi", "synthwave")):
+            for s_ in range(16):
+                t = t_of(b0 + s_)
+                k_, sn, hh = drums[0][s_], drums[1][s_], drums[2][s_]
+                if k_ == "x":
+                    kick(t, .75 if style != "lofi" else .5)
+                elif k_ == "D":
+                    kick(t, .7, 110, 60, .22)
+                if sn == "x":
+                    noise(t, .14 if style != "lofi" else .09, .3 if style != "lofi" else .14)
+                    tone(t, .08, 190, "tri", .18, "hit")
+                elif sn == "T":
+                    noise(t, .05, .22, True)
+                    tone(t, .05, 520, "sin", .14, "hit")
+                if hh == "x":
+                    noise(t, .035 if style != "boss" else .025, .07 if style != "lofi" else .045, True)
+                if style == "workout" and s_ in (4, 12) and bar % 2:
+                    noise(t + .012, .1, .2)   # clap
+            if bar % 4 == 3 and style in ("pop", "party", "boss", "workout", "synthwave"):
+                for s_ in (12, 13, 14, 15):  # fill
+                    noise(t_of(b0 + s_), .06, .18)
+        # bass
+        if style in ("party", "workout"):
+            for s_ in range(2, 16, 4):
+                tone(t_of(b0 + s_), st * 1.8, hz(bass + (12 if s_ % 8 == 6 else 0)), "saw", .2)
+        elif style in ("synthwave", "boss"):
+            for s_ in range(0, 16, 2):
+                tone(t_of(b0 + s_), st * 1.9, hz(bass + (12 if style == "boss" and s_ % 8 == 6 else 0)),
+                     "saw" if style == "synthwave" else "sq", .17)
+        elif style == "hop":
+            for s_, o in ((0, 0), (3, 12), (6, 0), (10, 7), (12, 12)):
+                tone(t_of(b0 + s_), st * 2, hz(bass + o), "tri", .32)
+        elif style == "desert":
+            tone(t_of(b0), st * 6, hz(bass), "tri", .3)
+            tone(t_of(b0 + 6), st * 4, hz(bass + 7), "tri", .25)
+            tone(t_of(b0), st * 16, hz(bass + 12), "sin", .05, "pad")   # drone
+        elif style in ("lofi", "lullaby"):
+            tone(t_of(b0), st * 15, hz(bass), "sin", .3 if style == "lofi" else .2, "pad")
+        else:
+            for s_ in range(0, 16, 4):
+                tone(t_of(b0 + s_), st * 3.6, hz(bass), "tri", .3)
+        # chords / arps
+        if style == "lofi":
+            for m in ch:
+                tone(t_of(b0) + .012 * ch.index(m), st * 15, hz(m), "organ", .045, "pad")
+        elif style == "synthwave":
+            for m in ch:
+                tone(t_of(b0), st * 16, hz(m), "saw", .025, "pad")
+            for s_ in range(16):
+                tone(t_of(b0 + s_), st * .9, hz(ch[s_ % 4] + 12), "tri", .05)
+        elif style in ("party", "boss"):
+            for s_ in range(16):
+                tone(t_of(b0 + s_), st * .8, hz(ch[(s_ * (1 if style == "party" else 2)) % 3] + 12), "pulse", .035)
+        elif style == "lullaby":
+            for s_ in range(0, 16, 2):
+                tone(t_of(b0 + s_), st * 3, hz(ch[(s_ // 2) % 4] + 12), "box", .07)
+        elif style in ("pop", "hop", "workout"):
+            for s_ in (4, 12) if style != "workout" else (2, 6, 10, 14):
+                for m in ch:
+                    tone(t_of(b0 + s_), st * 1.5, hz(m), "sq" if style == "pop" else "pulse", .03)
+        # lead melody (2-bar motifs)
+        mot = form[(bar // 2) % len(form)]
+        if mot is None or (bar < 2 and style in ("lofi", "synthwave")):
+            continue
+        half = bar % 2
+        for slot in range(8):
+            m = mot[half * 8 + slot]
+            if not isinstance(m, int):
+                continue
+            ln = 1
+            while half * 8 + slot + ln < 16 and mot[half * 8 + slot + ln] == "-":
+                ln += 1
+            pitch = note(d + m, 1)
+            t = t_of(b0 + slot * 2)
+            dur = st * 2 * ln * .92
+            if style == "desert":
+                if rnd.random() < .3:   # grace note ornament
+                    tone(t, st * .5, hz(note(d + m + 1, 1)), "tri", lead[1] * .7)
+                    t += st * .5
+                    dur -= st * .5
+                tone(t, dur, hz(pitch), lead[0], lead[1], "organ", vib=.6)
+            else:
+                tone(t, dur, hz(pitch), lead[0], lead[1], "pad" if style in ("lofi", "synthwave") else "pluck",
+                     vib=.3 if style in ("lofi", "synthwave") and ln > 2 else 0)
+    # echo / room
+    if style in ("lofi", "synthwave", "desert", "lullaby"):
+        d_ = int(beat * .75 * RATE)
+        fb = .28
+        for i in range(d_, n, d_):
+            j = min(n, i + d_)
+            buf[i:j] = array("f", map(add, buf[i:j], (v * fb for v in buf[i - d_:j - d_])))
+    if style == "lofi":  # soft low-pass + vinyl crackle
+        y, a = 0.0, .35
+        out = []
+        for v in buf:
+            y += a * (v - y)
+            out.append(y)
+        for _ in range(int(n / RATE * 6)):
+            i = rnd.randrange(n - 2)
+            out[i] += rnd.uniform(-.25, .25)
+        buf = array("f", out)
     _write_wav(path, buf)
 
 
@@ -706,23 +978,34 @@ class Audio:
                 self.pg = pygame
             except Exception:
                 self.pg = None
-        self.tracks = [os.path.join(CACHE, f"track{i}.wav") for i in range(len(TRACKS))]
-        self.tracks_ready = all(os.path.exists(p) for p in self.tracks)
+        self.tracks = [os.path.join(CACHE, f"song{i}_v2.wav") for i in range(len(TRACKS))]
+        for i in range(3):  # v1 tracks are replaced by the v2 synth
+            try:
+                os.remove(os.path.join(CACHE, f"track{i}.wav"))
+            except OSError:
+                pass
+        self.making = set()
         self.playing = None          # None | ("track", i) | ("file", path)
         self.playlist, self.pl_i = [], 0
         self.bpm = 120
         self.t0 = time.perf_counter()
 
-    def ensure_tracks(self):
-        if self.tracks_ready:
+    def ready(self, i):
+        return os.path.exists(self.tracks[i])
+
+    def make(self, i):
+        """Synthesize track i in the background (once, then cached)."""
+        if self.ready(i) or i in self.making:
             return
+        self.making.add(i)
 
         def work():
-            for (bpm, prog, style, seed), p in zip(TRACKS, self.tracks):
-                if not os.path.exists(p):
-                    synth_track(p + ".tmp", bpm, prog, style, seed)
-                    os.replace(p + ".tmp", p)
-            self.tracks_ready = True
+            try:
+                synth_track(self.tracks[i] + ".tmp", *TRACKS[i])
+                os.replace(self.tracks[i] + ".tmp", self.tracks[i])
+            except Exception:
+                pass
+            self.making.discard(i)
         threading.Thread(target=work, daemon=True).start()
 
     def play(self, name, vol=1.0):
@@ -751,6 +1034,9 @@ class Audio:
         else:
             winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_LOOP)
 
+    def style(self):
+        return TRACKS[self.playing[1]][4] if self.playing and self.playing[0] == "track" else "pop"
+
     def play_files(self, files):
         if not self.pg or not files:
             return False
@@ -771,12 +1057,15 @@ class Audio:
         self.playing = None
         return False
 
+    def next_index(self):
+        return (self.playing[1] + 1) % len(TRACKS) if self.playing and self.playing[0] == "track" else 0
+
     def next(self):
         if self.playing and self.playing[0] == "file":
             self.pl_i += 1
             return self._play_pl()
-        if self.tracks_ready:
-            i = (self.playing[1] + 1) % len(TRACKS) if self.playing else 0
+        i = self.next_index()
+        if self.ready(i):
             self.play_track(i)
             return True
         return False
@@ -916,6 +1205,92 @@ def parse_reply(text):
     return text.strip(), []
 
 
+# ============================================================== web tools (no API keys needed)
+UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+
+
+def http_get(url, timeout=15, limit=1_500_000):
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "en,ar;q=0.8"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        raw = r.read(limit)
+        cs = r.headers.get_content_charset() or "utf-8"
+    return raw.decode(cs, "ignore")
+
+
+def html_text(html):
+    import html as _h
+    html = re.sub(r"(?is)<(script|style|noscript|svg|head)\b.*?</\1>", " ", html)
+    html = re.sub(r"(?i)<br\s*/?>|</p>|</div>|</li>|</h\d>", "\n", html)
+    text = _h.unescape(re.sub(r"<[^>]+>", " ", html))
+    return re.sub(r"\n\s*\n+", "\n", re.sub(r"[ \t\r\f\v]+", " ", text)).strip()
+
+
+def web_search(query, n=6):
+    """DuckDuckGo HTML results, Wikipedia as a fallback. Returns [(title, url, snippet)]."""
+    import html as _h
+    out = []
+    try:
+        page = http_get("https://html.duckduckgo.com/html/?q=" + urllib.parse.quote(query))
+        for m in re.finditer(r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>(.*?)(?=class="result__a"|$)', page, re.S):
+            url = _h.unescape(m.group(1))
+            u = re.search(r"uddg=([^&]+)", url)
+            url = urllib.parse.unquote(u.group(1)) if u else url
+            if "duckduckgo.com/y.js" in url:
+                continue  # ads
+            sn = re.search(r'class="result__snippet"[^>]*>(.*?)</a>', m.group(3), re.S)
+            out.append((html_text(m.group(2)), url, html_text(sn.group(1)) if sn else ""))
+            if len(out) >= n:
+                break
+    except Exception:
+        pass
+    if not out:
+        wl = "ar" if is_ar(query) else "en"
+        data = json.loads(http_get(f"https://{wl}.wikipedia.org/w/api.php?action=query&list=search&format=json"
+                                   f"&srlimit={n}&srsearch=" + urllib.parse.quote(query)))
+        for r in data.get("query", {}).get("search", []):
+            out.append((r["title"], f"https://{wl}.wikipedia.org/wiki/" + urllib.parse.quote(r["title"].replace(" ", "_")),
+                        html_text(r.get("snippet", ""))))
+    return out
+
+
+def fetch_text(url, limit=7000):
+    page = http_get(url)
+    t = re.search(r"(?is)<title[^>]*>(.*?)</title>", page)
+    body = html_text(page)
+    return ((html_text(t.group(1)) + "\n") if t else "") + body[:limit]
+
+
+def weather(place=""):
+    data = json.loads(http_get("https://wttr.in/" + urllib.parse.quote(place.strip()) + "?format=j1", timeout=12))
+    cur = data["current_condition"][0]
+    area = data.get("nearest_area", [{}])[0]
+    where = ", ".join(x[0]["value"] for x in (area.get("areaName"), area.get("country")) if x) or place
+    days = data.get("weather", [])
+    fc = "; ".join(f"{d['date']}: {d['mintempC']}-{d['maxtempC']}C" for d in days[:3])
+    return dict(where=where, temp=cur["temp_C"], feels=cur["FeelsLikeC"], desc=cur["weatherDesc"][0]["value"],
+                hum=cur["humidity"], wind=cur["windspeedKmph"], forecast=fc,
+                max=days[0]["maxtempC"] if days else "?", min=days[0]["mintempC"] if days else "?")
+
+
+def youtube_find(query):
+    """First YouTube video for a query -> (url, title) without an API key."""
+    page = http_get("https://www.youtube.com/results?search_query=" + urllib.parse.quote(query) + "&sp=EgIQAQ%253D%253D")
+    m = re.search(r'"videoRenderer":\{"videoId":"([\w-]{11})".*?"title":\{"runs":\[\{"text":"(.*?)"\}', page, re.S)
+    if not m:
+        m = re.search(r'"videoId":"([\w-]{11})"', page)
+        return ("https://www.youtube.com/watch?v=" + m.group(1), query) if m else (None, None)
+    title = json.loads('"' + m.group(2) + '"') if "\\" in m.group(2) else m.group(2)
+    return "https://www.youtube.com/watch?v=" + m.group(1), title
+
+
+def run_powershell(cmd, timeout=40):
+    p = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", cmd], capture_output=True,
+                       timeout=timeout, creationflags=0x08000000)
+    dec = lambda b: b.decode("utf-8", "ignore") if b else ""
+    out = (dec(p.stdout) + ("\n[stderr] " + dec(p.stderr) if p.stderr.strip() else "")).strip()
+    return f"exit code {p.returncode}\n{out[:5000] or '(no output)'}"
+
+
 # ============================================================== the pet
 class Clawd:
     def __init__(self):
@@ -966,14 +1341,14 @@ class Clawd:
         self.cd = {}
         self.happy, self.energy = 75.0, 85.0
         self.afk = False
-        self.active_sec = self.water_sec = 0.0
+        self.active_sec = self.water_sec = self.eyes_sec = 0.0
         self.last_title, self.last_ctx, self.last_song = "", None, None
         self.batt_warned = False
         self.cpu_hot = 0
         self.pending_explain = None
         self.windows = []
         self.timers = []
-        self.history, self.chat_log = [], []
+        self.history, self.chat_log = [], []   # (restored from chat.json below)
         self.waiting = False
         self.q = queue.Queue()
         self.chat = self.settings_win = None
@@ -985,7 +1360,38 @@ class Clawd:
         self.fly_forever, self.fly_target, self.fly_retarget = False, None, 0.0
         self.web_d, self.web_target, self.web_phase, self.thread_win = 0.0, 0.0, None, None
         self.want_peek, self.peek_side = False, 0
+        self.want_web = False
         self.hidden = False
+        # v1.1: smooth body (rotation / limbs), physics, needs, exercise, agent
+        self.rot, self.spin, self.rot_target, self.tumble = 0.0, 0.0, 0.0, 0.0
+        self._rc, self._rs, self.dsurf = 1.0, 0.0, "floor"
+        self.arm = [3.0, 3.0]
+        self.after_land = None
+        self.chain = self._chain2 = None
+        self.ask_queue = []
+        self.slide_v = 0.0
+        self.mouse_still = 0.0
+        self.ex, self.routine = None, []
+        self.hunger = 20.0
+        self.hover_until, self.near_since, self.away_since = 0.0, None, 0.0
+        self.awaiting_name = False
+        self.agent = None
+        self.yt_song = None
+        self.force_flip = False
+        self.typing_t = 0.0
+        self.input_idle_prev = 0.0
+        self.pose = {"legs": 0, "arms": "down", "eyes": "open", "bob": 0.0}
+        today = time.strftime("%Y-%m-%d")
+        if self.cfg["stats"].get("day") != today:
+            self.cfg["stats"] = {"day": today, **{k: 0 for k in ("pets", "cookies", "throws", "workouts", "chats", "jokes")},
+                                 "total_workouts": self.cfg["stats"].get("total_workouts", 0)}
+        try:
+            with open(CHAT_PATH, encoding="utf-8") as f:
+                saved = json.load(f)
+            self.history = saved.get("history", [])[-20:]
+            self.chat_log = [tuple(x) for x in saved.get("log", [])][-40:]
+        except (OSError, ValueError):
+            pass
         try:
             self.last_clip = root.clipboard_get()
         except tk.TclError:
@@ -1005,11 +1411,16 @@ class Clawd:
         hello = {"en": ("Good morning!", "Good afternoon!", "Good evening!", "Up late, huh?"),
                  "ar": ("صباح الخير!", "مساء النور!", "مساء الخير!", "سهران؟")}[self.lang]
         greet = hello[0 if 5 <= h < 12 else 1 if h < 18 else 2 if h < 23 else 3]
-        self.say(greet + (" أنا كلود :)" if self.lang == "ar" else " I'm Clawd :)"))
+        if self.cfg["name"]:
+            self.say(greet[:-1] + self.c_() + greet[-1] + (" اشتقت لك :)" if self.lang == "ar" else " Missed you :)"))
+        else:
+            self.say(greet + (" أنا كلود :)" if self.lang == "ar" else " I'm Clawd :)"))
         if self.cfg["first_run"]:
             self.say_queue += self.lines("tips")
             self.cfg["first_run"] = False
             self.save()
+        if not self.cfg["name"] and not self.cfg["asked_name"]:
+            self.root.after(9000, self.ask_name)
         self.refresh_windows()
         self.tick()
 
@@ -1053,6 +1464,49 @@ class Clawd:
         s = random.choice(self.lines(key))
         return s.format(**kw) if kw else s
 
+    def c_(self):
+        """', Name' (or '') to sprinkle the user's name into lines."""
+        n = self.cfg.get("name", "").strip()
+        return ("، " if self.lang == "ar" else ", ") + n if n else ""
+
+    def sayl(self, key, **kw):
+        """Say a random line, filling {c} with the user's name."""
+        self.say(self.line(key, c=self.c_(), **kw) if "{c}" in "".join(self.lines(key)) else self.line(key, **kw))
+
+    def stat(self, key, n=1):
+        st = self.cfg["stats"]
+        st[key] = st.get(key, 0) + n
+        return st[key]
+
+    def ask_name(self):
+        if self.cfg["name"] or self.hidden:
+            return
+        self.cfg["asked_name"] = True
+        self.save()
+        self.awaiting_name = True
+        self.say(self.line("ask_name"))
+        self.spawn("bang")
+        self.sfx("ding", .6)
+
+    def set_name(self, name):
+        name = re.sub(r"[^\w\s'.-]", "", name, flags=re.U).strip()[:24]
+        if not name:
+            return
+        self.cfg["name"] = name[:1].upper() + name[1:]
+        self.awaiting_name = False
+        self.save()
+        self.say(self.line("name_set", n=self.cfg["name"]))
+        self.set_state("dance", 3)
+        self.spawn("heart", 4)
+        self.sfx("yes")
+
+    def save_chat(self):
+        try:
+            with open(CHAT_PATH, "w", encoding="utf-8") as f:
+                json.dump({"history": self.history[-20:], "log": self.chat_log[-40:]}, f, ensure_ascii=False)
+        except OSError:
+            pass
+
     def roll_ask(self):
         r = ASK_RATES.get(self.cfg["ask_rate"])
         return random.uniform(*r) if r else 1e9
@@ -1073,12 +1527,12 @@ class Clawd:
         k = self.k
         self.P = max(3, round(7 * k * s))
         self.PW, self.PH = 16 * self.P, 9 * self.P
-        self.S = int(max(470 * k, self.PH + 440 * k, self.PW + 60 * k))
+        self.S = int(max(470 * k, self.PH + 440 * k + 12 * self.P, self.PW + 60 * k + 12 * self.P))
         self.c.config(width=self.S, height=self.S)
         self.place_window(force=True)
 
     def feet_canvas(self, surf):
-        S, m = self.S, 2
+        S, m = self.S, 2 + 6 * self.P   # margin leaves room to tumble / lean without clipping
         return {"floor": (S / 2, S - m), "air": (S / 2, S - m), "fly": (S / 2, S - m), "ceil": (S / 2, m),
                 "lwall": (m, S / 2), "rwall": (S - m, S / 2)}[surf]
 
@@ -1139,6 +1593,10 @@ class Clawd:
     def T(self, u, v):
         lx = (u - 8) * self.P * self.sx
         ly = (v + self.bob - 9) * self.P * self.sy
+        if self.rot:  # rotate around the body centre (tumbling, leaning, swaying)
+            py = -4.5 * self.P * self.sy
+            dy = ly - py
+            lx, ly = lx * self._rc - dy * self._rs, lx * self._rs + dy * self._rc + py
         o = self.dsurf
         if o == "ceil":
             lx, ly = -lx, -ly
@@ -1146,7 +1604,7 @@ class Clawd:
             lx, ly = -ly, lx
         elif o == "rwall":
             lx, ly = ly, -lx
-        fx, fy = self.feet_canvas(o)
+        fx, fy = self.anchor
         return fx + lx, fy + ly
 
     def local_dir(self, dx, dy):
@@ -1174,8 +1632,10 @@ class Clawd:
     DUR = {"walk": (2, 7), "idle": (1.5, 4.5), "sleep": (12, 22), "dance": (4, 6), "think": (2.5, 5.5), "sad": (2.5, 2.5),
            "chase": (8, 8), "code": (6, 12), "stretch": (2.2, 2.2), "eat": (3.5, 3.5), "dizzy": (2.5, 2.5),
            "angry": (2, 2), "petted": (2, 2), "crouch": (.18, .18), "hang": (1.5, 4), "sneeze": (1.8, 1.8),
-           "peek": (4, 7), "fly": (6, 14), "web": (60, 60), "moonwalk": (4, 4)}
-    FLOOR_ONLY = ("sleep", "code", "eat", "stretch", "chase", "play", "peek", "moonwalk")
+           "peek": (4, 7), "fly": (6, 14), "web": (60, 60), "moonwalk": (4, 4), "getup": (1.1, 1.1),
+           "slide": (6, 6), "wave": (1.6, 1.6), "look": (2.5, 4), "beg": (3, 3), "yawn": (1.6, 1.6), "proud": (2, 2)}
+    NEED_FLOOR = ("chase", "play", "peek", "moonwalk", "slide")   # need ground under the feet
+    NO_FLY = ("walk", "sleep", "chase", "play", "peek", "moonwalk", "slide", "getup")
 
     def set_state(self, s, timer=None):
         if self.state == "ask" and s != "ask" and self.ask_req:
@@ -1184,12 +1644,16 @@ class Clawd:
             self.ask_req = None
         if self.state == "web" and s != "web":
             self.end_web()
-        if s in self.FLOOR_ONLY and self.surf != "floor":
-            if self.surf == "fly":
-                self.stop_fly()
-            else:
-                self.drop()
+        if self.state == "exercise" and s != "exercise":
+            self.ex, self.routine = None, []
+        # actions that need the floor: land / let go first, then do it
+        if (s in self.NEED_FLOOR and self.surf != "floor") or (s in self.NO_FLY and self.surf == "fly"):
+            return self.need_floor(lambda: self.set_state(s, timer))
+        if self.surf == "air" and s not in ("jump", "fall", "drag", "crouch"):
+            self.after_land = lambda: self.set_state(s, timer)
             return
+        if s == "jump" and self.surf in ("lwall", "rwall", "ceil"):
+            return self.drop()
         if s == "walk" and self.stay:
             s = "idle"
         self.state = s
@@ -1198,22 +1662,51 @@ class Clawd:
         if s == "walk":
             self.dir = random.choice((-1, 1))
         elif s == "jump":
-            self.launch(0 if self.stay else random.uniform(-80, 80) * self.k, -random.uniform(850, 1050) * self.k)
+            if self.surf == "fly":
+                self.state, self.timer = "fly", 3
+                self.sqv -= 6
+                return
+            vy = -random.uniform(850, 1050) * self.k
+            self.launch(0 if self.stay else random.uniform(-80, 80) * self.k, vy)
             self.state = "jump"
+            if random.random() < .2 or self.force_flip:  # sometimes a backflip
+                self.force_flip = False
+                self.spin = -self.dir * 2 * math.pi / (2 * abs(vy) / self.gravity())
+                self.say(self.line("flip"))
         elif s == "think":
             self.word = random.choice(THINK[1 if self.lang == "ar" else 0])
         elif s == "sleep":
             self.say_queue, self.bubble = [], None
+            if self.surf in ("ceil", "lwall", "rwall") and random.random() < .4:
+                self.say(self.line("sleep_wall"))
         elif s == "stretch":
             self.say("*تمدد*" if self.lang == "ar" else "*streeeetch*")
         elif s == "angry":
             self.sfx("angry")
         elif s == "sneeze":
             self.say(self.line("sneeze_a"))
+        elif s == "eat":
+            self.stat("cookies")
+        elif s == "yawn":
+            self.sfx("yawn")
+        elif s == "wave":
+            self.sayl("wave")
+
+    def need_floor(self, fn):
+        """Run fn now if standing on the floor, otherwise get down first and run it on landing."""
+        if self.surf == "floor":
+            return fn()
+        self.after_land = fn
+        if self.surf == "fly":
+            self.fly_forever = False
+            self.stop_fly()
+        elif self.surf != "air":
+            self.drop()
 
     def launch(self, vx, vy):
         self.surf, self.plat = "air", None
         self.vx, self.vy = vx, vy
+        self.spin = 0.0
         self.sqv -= 6
         self.sfx("jump")
 
@@ -1229,7 +1722,7 @@ class Clawd:
         self.fy += self.PH / 2
         self.surf, self.plat = "air", None
         self.vx, self.vy = lx * 250 * self.k, ly * 250 * self.k
-        self.state, self.max_v = "fall", 0
+        self.state, self.max_v, self.spin, self.tumble = "fall", 0, 0.0, 0.0
         self.say(self.line("letgo"))
         self.sfx("scream", .6)
 
@@ -1239,17 +1732,21 @@ class Clawd:
                 "ceil": (self.fx, self.fy + h), "lwall": (self.fx + h, self.fy), "rwall": (self.fx - h, self.fy)}[self.surf]
 
     def pick(self):
+        if self.chain:  # a planned follow-up state (getting up -> dizzy, etc.)
+            s, t = self.chain
+            self.chain, self._chain2 = self._chain2, None
+            return self.set_state(s, t)
         if self.surf == "fly":
             if self.fly_forever or self.stay:
                 self.state, self.timer = "fly", 5
                 return
             return self.stop_fly()
         if self.stay:  # animate in place only
-            w = {"idle": 6, "think": 2, "quip": 2, "sneeze": .5, "dance": 1 + (10 if self.audio.playing else 0)}
+            w = {"idle": 6, "think": 2, "quip": 2, "sneeze": .5, "look": 2, "dance": 1 + (10 if self.audio.playing else 0)}
             if self.surf == "floor":
                 w.update(sleep=1 + (4 if self.energy < 25 else 0), code=1, stretch=1)
             else:
-                w = {"hang": 6, "quip": 1, "sneeze": .3}
+                w = {"hang": 6, "quip": 1, "sneeze": .3, "look": 1}
             s = random.choices(list(w), weights=list(w.values()))[0]
             self.set_state("idle" if s == "quip" else s)
             if s == "quip":
@@ -1263,15 +1760,18 @@ class Clawd:
                 return self.start_web()
             if self.cfg["fly"] and r < .36:
                 return self.start_fly()
-            self.set_state("walk" if r < .85 else "hang")
+            if self.energy < 25 and r < .45:
+                return self.set_state("sleep")
+            self.set_state("walk" if r < .82 else "hang" if r < .93 else "look")
             if self.state == "walk" and self.surf in ("lwall", "rwall") and random.random() < .5:
                 self.dir = -1
             if random.random() < .15:
                 self.say(self.line("ceiling" if self.surf == "ceil" else "climb"))
             return
-        w = {"walk": 6, "idle": 3, "think": 2, "sleep": 1 + (5 if self.energy < 25 else 0),
+        w = {"walk": 6, "idle": 3, "think": 2, "sleep": 1 + (5 if self.energy < 25 else 0), "look": 2,
              "dance": 1 + (2 if self.happy > 70 else 0) + (12 if self.audio.playing else 0), "jump": 1, "quip": 3,
-             "stretch": 1, "code": 1, "sneeze": .6, "joke": .5}
+             "stretch": 1, "code": 1, "sneeze": .6, "joke": .5, "yawn": .8 if self.energy < 40 else 0,
+             "exercise": .8 if self.energy > 45 else 0}
         if self.cfg["follow"]:
             w["chase"] = 2
         if self.cfg["windows"]:
@@ -1301,8 +1801,53 @@ class Clawd:
             self.start_fly()
         elif s == "play":
             self.set_state("play", 10)
+        elif s == "exercise":
+            self.start_exercise()
         else:
             self.set_state(s)
+
+    # ---------- exercise
+    def start_exercise(self, kind=None, routine=False, cont=False):
+        if routine:
+            self.routine = list(ROUTINE)
+            kind = self.routine.pop(0)
+            self.stat("workouts")
+            self.cfg["stats"]["total_workouts"] = self.cfg["stats"].get("total_workouts", 0) + 1
+            if not self.audio.playing and self.cfg["sound"]:
+                self.music_cmd("play", 7, quiet=True)
+        kind = kind or random.choice(ROUTINE[:5])
+        if self.surf in ("fly", "air"):
+            rt = self.routine
+            return self.need_floor(lambda: (setattr(self, "routine", rt), self.start_exercise(kind, cont=True)))
+        rt = self.routine
+        if self.state == "exercise":
+            self.state = "idle"  # switch exercise without clearing the routine
+        per, reps = EXERCISES[kind]
+        self.set_state("exercise", per * reps + .25)
+        self.routine = rt
+        self.ex = {"kind": kind, "per": per, "reps": reps, "t0": self.time, "rep": 0, "routine": bool(rt) or routine}
+        name = self.tr("ex_" + kind)
+        if kind == "yoga":
+            self.say(self.line("yoga"))
+        else:
+            self.say(self.line("ex_next" if cont else "ex_start", x=name))
+        self.sfx("whoosh")
+
+    def finish_exercise(self):
+        ex = self.ex or {}
+        self.energy = max(0, self.energy - 6)
+        self.happy = min(100, self.happy + 5)
+        if self.routine:
+            return self.start_exercise(self.routine.pop(0), cont=True)
+        self.ex = None
+        self.set_state("proud", 2.5)
+        self.spawn("spark", 8)
+        self.sfx("win")
+        if ex.get("routine"):
+            self.sayl("ex_done")
+            self.spawn("heart", 3)
+        else:
+            self.say(random.choice(["Phew! *flex*", "Strong Clawd!", "Easy."] if self.lang != "ar" else ["أوف! *استعراض عضلات*", "كلود القوي!", "سهلة."]))
 
     # ---------- stay / come / fly / web / peek
     def set_stay(self, on, quiet=False):
@@ -1327,7 +1872,7 @@ class Clawd:
         else:
             self.start_fly(target=(mx, my + self.PH * 1.3), come=True)
 
-    def start_fly(self, forever=False, target=None, come=False):
+    def start_fly(self, forever=False, target=None, come=False, quiet=False):
         if not self.cfg["fly"] and not forever and not come:
             return self.set_state("walk")
         cx, cy = self.pet_center()
@@ -1343,21 +1888,25 @@ class Clawd:
         a, b = self.DUR["fly"]
         self.timer = 1e6 if (forever or come) else random.uniform(a, b)
         self.sfx("fly")
-        if not come and random.random() < .7:
+        if not come and not quiet and random.random() < .7:
             self.say(self.line("fly"))
 
     def stop_fly(self):
         self.fly_forever = False
         if self.surf != "fly":
             return
-        self.surf, self.state, self.max_v = "air", "jump", 0
+        self.surf, self.state, self.max_v, self.spin = "air", "jump", 0, 0.0
         self.vy = max(self.vy, 0)
         if random.random() < .5:
-            self.say(self.line("land"))
+            self.say(self.line("land_fly"))
 
     def start_web(self):
-        if self.surf != "ceil":
-            return self.set_state("walk")
+        if self.surf != "ceil":  # fly up to the ceiling first, then drop a thread
+            self.stay = False
+            self.want_web = True
+            _, T_, _, _ = self.mon
+            return self.start_fly(target=(self.pet_center()[0], T_), come=True, quiet=True)
+        self.want_web = False
         self.set_state("web")
         _, T_, _, B_ = self.mon
         self.web_d, self.web_phase = 0.0, "down"
@@ -1394,23 +1943,43 @@ class Clawd:
         self.thread_win.deiconify()
         self.thread_win.geometry(f"{w}x{hgt}+{int(self.fx - w / 2)}+{int(T_)}")
 
+    def off_window(self, fn):
+        """Standing on a window: hop down to the real floor, then fn()."""
+        self.after_land = fn
+        self.fall_off(self.dir * 220 * self.k, -420 * self.k, "jump")
+        self.sfx("jump")
+
     def go_peek(self):
-        if self.surf != "floor" or self.plat:
-            return self.set_state("walk")
+        self.stay = False
+        if self.surf != "floor":
+            return self.need_floor(self.go_peek)
+        if self.plat:
+            return self.off_window(self.go_peek)
         L_, _, R_, _ = self.mon
         self.set_state("walk", 30)
         self.dir = -1 if self.fx - L_ < R_ - self.fx else 1
         self.want_peek = True
 
     def go_climb(self):
-        if self.surf != "floor" or self.plat:
+        self.stay = False
+        if self.surf in ("lwall", "rwall", "ceil"):
+            self.say(self.line("already"))
             return self.set_state("walk")
+        if self.surf != "floor":
+            return self.need_floor(self.go_climb)
+        if self.plat:
+            return self.off_window(self.go_climb)
         L_, _, R_, _ = self.mon
         self.set_state("walk", 30)
         self.dir = -1 if self.fx - L_ < R_ - self.fx else 1
         self.want_climb = True
 
-    def try_hop(self):
+    def try_hop(self, user=False):
+        if user:
+            self.stay = False
+            if self.surf != "floor":
+                self.need_floor(lambda: self.try_hop(True))
+                return True
         if self.surf != "floor":
             return False
         k, g = self.k, self.gravity()
@@ -1433,6 +2002,8 @@ class Clawd:
                 continue
             cands.append((h, tx, top, rise))
         if not cands:
+            if user:
+                self.say(self.line("no_windows"))
             return False
         h, tx, top, rise = random.choice(cands)
         peak = max(rise, 0) + 110 * k
@@ -1450,7 +2021,7 @@ class Clawd:
 
     # ---------------------------------------------------------- approvals (jokes + real actions)
     def ask_joke(self):
-        if self.surf != "floor":
+        if self.surf in ("air", "fly") or self.state in ("drag", "web"):
             return
         tool, cmd = random.choice(APPROVALS)
         self.set_state("ask", 1e6)
@@ -1458,14 +2029,17 @@ class Clawd:
         self.say_queue, self.bubble = [], None
         self.sfx("ding")
 
-    def ask_real(self, kind, tool, cmd, do):
-        if kind in self.cfg["trust"]:
+    def ask_real(self, kind, tool, cmd, do, deny=None):
+        if kind in self.cfg["trust"] and kind not in ("run", "file"):
             do()
+            return
+        if self.ask_req and self.ask_req.get("real"):  # one question at a time: queue the next one
+            self.ask_queue.append((kind, tool, cmd, do, deny))
             return
         if self.state not in ("fall", "jump", "drag", "crouch"):
             self.state, self.timer = "ask", 1e6
         self.ask_req = {"tool": tool, "cmd": cmd, "real": True, "kind": kind, "do": do,
-                        "deny": lambda: None, "until": self.time + 25}
+                        "deny": deny or (lambda: None), "until": self.time + 30}
         self.say_queue, self.bubble = [], None
         self.sfx("ding")
 
@@ -1474,10 +2048,12 @@ class Clawd:
         self.next_ask = self.roll_ask()
         if not req:
             return
+        if req.get("real") and self.ask_queue:
+            self.root.after(400, lambda: self.ask_real(*self.ask_queue.pop(0)) if self.ask_queue else None)
         if req.get("real"):
             self.state, self.timer = "idle", 2
             if kind in ("yes", "always"):
-                if kind == "always" and req["kind"] not in self.cfg["trust"]:
+                if kind == "always" and req["kind"] not in self.cfg["trust"] and req["kind"] not in ("run", "file"):
                     self.cfg["trust"].append(req["kind"])
                     self.save()
                 self.sfx("yes")
@@ -1485,6 +2061,7 @@ class Clawd:
             else:
                 self.sfx("no")
                 self.say(self.line("denied"))
+                req["deny"]()
             return
         if kind in ("yes", "always"):
             self.set_state("dance", 4.5)
@@ -1528,8 +2105,11 @@ class Clawd:
                 self.answer("no" if self.ask_req.get("real") else "timeout")
             if self.state == "web":
                 self.end_web()
-            self.was_flying = self.surf == "fly" and self.fly_forever
+            self.was_flying = self.surf == "fly"
+            self.after_land = self.chain = None
+            self.ex, self.routine = None, []
             self.state, self.surf, self.plat = "drag", "air", None
+            self.spin = 0.0
             self.say(self.line("drag"))
             self.sfx("scream")
         self.fx, self.fy = e.x_root, e.y_root + self.PH - self.P * 1.2
@@ -1545,16 +2125,29 @@ class Clawd:
             t0, x0, y0 = recent[0]
             t1, x1, y1 = self.samples[-1]
             dt = max(t1 - t0, 0.016)
-            lim = 4500 * self.k
+            if now - t1 > .08:  # mouse stopped before letting go = a gentle drop, not a throw
+                x0, y0 = x1, y1
+            k = self.k
+            lim = 4500 * k
             self.vx = max(-lim, min(lim, (x1 - x0) / dt))
             self.vy = max(-lim, min(lim, (y1 - y0) / dt))
-            self.state, self.max_v = "fall", 0
+            speed = math.hypot(self.vx, self.vy)
+            self.state, self.max_v, self.tumble = "fall", 0, 0.0
             self.mon = monitor_work(e.x_root, e.y_root)
-            if math.hypot(self.vx, self.vy) < 1500 * self.k and self.stick_on_drop():
+            if speed < 1500 * k and self.stick_on_drop():
                 return
-            if getattr(self, "was_flying", False) or self.stay and self.cfg["fly"]:
-                self.start_fly(forever=True)
-                self.state = "fly"
+            if self.was_flying and speed < 400 * k:  # placed gently in the air -> keep flying there
+                self.start_fly(forever=self.fly_forever, quiet=True)
+                self.fly_target, self.fly_retarget = (self.fx, self.fy), self.time + 2.5
+                self.state, self.timer = "fly", 4
+                return
+            # a real throw: no propeller, just physics (gravity, tumbling, bounces, sliding)
+            self.fly_forever = False
+            self.spin = 0.0 if speed < 600 * k else max(-16, min(16, self.vx / (9 * self.P))) + random.uniform(-1, 1)
+            if speed > 900 * k:
+                n = self.stat("throws")
+                if n % 5 == 0:
+                    self.root.after(1800, lambda: self.say(self.line("thrown", t=n)))
         elif self.state != "ask":
             self.click_job = self.root.after(230, self.single_click)
 
@@ -1606,6 +2199,7 @@ class Clawd:
                     return
                 self.set_state("petted")
                 self.happy = min(100, self.happy + 4)
+                self.stat("pets")
                 if self.cooldown("purr", 1.5):
                     self.sfx("purr")
                 if random.random() < .3:
@@ -1620,9 +2214,10 @@ class Clawd:
 
     # ---------------------------------------------------------- particles
     def spawn(self, kind, n=1):
-        if not hasattr(self, "dsurf"):
+        if not hasattr(self, "sx"):
             return
-        hx, hy = self.T(8, 0)
+        self.anchor = self.feet_canvas(self.surf)
+        hx, hy = self.T(8, 9) if kind == "dust" else self.T(8, 0)
         for _ in range(n):
             if kind == "heart":
                 lv, sx, sp = (random.uniform(-40, 40), -70), random.uniform(-.5, .5) * self.PW, 1.4
@@ -1637,49 +2232,82 @@ class Clawd:
             elif kind == "spark":
                 ang = random.uniform(0, 6.28)
                 lv, sx, sp = (math.cos(ang) * 160, math.sin(ang) * 160 - 60), 0, 0.6
+            elif kind == "dust":
+                lv, sx, sp = (random.uniform(-90, 90) - self.dir * 40, random.uniform(-50, -15)), random.uniform(-.4, .4) * self.PW, .5
             else:  # bang
                 lv, sx, sp = (0, 0), self.PW * .55, 1.0
             dx, dy = self.screen_dir(sx, 0)
             vx, vy = self.screen_dir(*lv)
             self.parts.append([kind, hx + dx, hy + dy, vx * self.k, vy * self.k, sp, sp])
 
-    # ---------------------------------------------------------- AI chat
+    # ---------------------------------------------------------- AI chat: a small agent
+    INFO_TOOLS = ("web_search", "fetch", "weather", "read_clipboard", "read_notes", "list_windows", "read_file", "run")
+    TOOL_NAMES = {"web_search": "WebSearch", "fetch": "WebFetch", "weather": "Weather", "read_clipboard": "Clipboard",
+                  "read_notes": "ReadNotes", "list_windows": "Windows", "read_file": "Read", "run": "PowerShell"}
+
     def context_str(self):
         plugged, bat = battery()
         bat_s = "none" if bat == 255 else f"{bat}%{' charging' if plugged else ''}"
         timers = ", ".join(f"{t['label'] or 'timer'} {int(t['end'] - time.time())}s left" for t in self.timers) or "none"
         music = self.audio.song_name() if self.audio.playing else (self.last_song or "none")
+        st = self.cfg["stats"]
         return (f"now {time.strftime('%A %Y-%m-%d %H:%M')}; active window \"{self.last_title or 'unknown'}\"; "
                 f"CPU {self.cpu_last}%, RAM {ram_percent()}%, battery {bat_s}; music playing: {music}; "
-                f"timers: {timers}; your mood {int(self.happy)}%, energy {int(self.energy)}%")
+                f"timers: {timers}; you are on the {self.surf} doing '{self.state}'"
+                f"{' (told to stay)' if self.stay else ''}; your mood {int(self.happy)}%, energy {int(self.energy)}%, "
+                f"hunger {int(self.hunger)}%; today the user petted you {st.get('pets', 0)}x, fed you {st.get('cookies', 0)} "
+                f"cookies, threw you {st.get('throws', 0)}x, did {st.get('workouts', 0)} workouts with you")
 
     def system_prompt(self):
         lang = "Arabic" if self.lang == "ar" else "English"
+        name = self.cfg.get("name", "").strip()
+        mem = self.cfg.get("memory", [])
+        who = (f"The user's name is {name}; use it now and then (not every message). " if name else
+               "You don't know the user's name yet; if it comes up naturally, ask, then save it with set_name. ")
+        mems = ("Things you remember about the user:\n" + "\n".join(f"- {m}" for m in mem[-40:]) + "\n\n") if mem else ""
         return (
-            "You are Clawd, the tiny orange pixel-art mascot of Claude Code, living as a smart desktop pet on the user's "
-            "Windows PC. Personality: playful, witty, warm, curious - and genuinely smart and helpful. You can DO things on "
-            "the PC through actions.\n\nAlways answer with ONE JSON object and nothing else:\n"
-            '{"say": "<your speech-bubble reply>", "actions": []}\n\n'
+            "You are Clawd, the tiny orange pixel-art mascot of Claude Code, living as a desktop pet on the user's Windows "
+            "PC. You are a small but genuinely capable AI agent: you look things up, run tools, and take actions on the PC. "
+            "Personality: playful, witty, warm, a bit dramatic, loves cookies and dancing - but sharp, accurate and helpful "
+            "first. " + who + "\n\n" + mems +
+            "Always answer with ONE JSON object and nothing else:\n"
+            '{"say": "<speech-bubble reply>", "actions": []}\n\n'
             "\"say\": short and natural (1-3 sentences, under 60 words) unless the user asks for an explanation, a text or "
             "code - then longer is fine. Plain text, no markdown, no emoji. Reply in the language the user writes in "
             f"(Arabic or English); default {lang}. If you wrote something the user will paste (email, message, code), also "
-            "add a copy action.\n\nActions (use only when they help, else []):\n"
-            '{"type":"timer","seconds":300,"label":"tea"} - timer / reminder (convert to seconds; for a clock time, compute '
-            "from the current time below)\n"
-            '{"type":"pomodoro","minutes":25}\n'
-            '{"type":"open_url","url":"https://..."}\n'
-            '{"type":"search","query":"..."} - web search\n'
+            "add a copy action.\n\n"
+            "AGENT LOOP: info tools return results to you in the next message, then you continue (up to 6 rounds). Use "
+            "them instead of guessing: search for news, prices, facts after your knowledge cutoff, weather, anything you "
+            "are unsure about; fetch a page to read it; run a PowerShell command for questions about this PC (files, disk "
+            "space, IP, installed apps, processes) or tasks the user asks for. While tools run, \"say\" may be \"\" or a "
+            "tiny status. When you have the answer, reply without info tools. Cite the site name for web facts.\n"
+            "Info tools:\n"
+            '{"type":"web_search","query":"..."}   {"type":"fetch","url":"https://..."}\n'
+            '{"type":"weather","place":"city, or \\"\\" for the user\'s location"}\n'
+            '{"type":"read_clipboard"}  {"type":"read_notes"}  {"type":"list_windows"}\n'
+            '{"type":"read_file","path":"C:\\\\..."} - user approves first\n'
+            '{"type":"run","command":"..."} - PowerShell on the user\'s PC; the user sees the exact command and must '
+            "approve it. Prefer read-only commands; never delete, format, change system settings or install anything "
+            "unless the user explicitly asked for exactly that.\n\n"
+            "Actions (use only when they help, else []):\n"
+            '{"type":"timer","seconds":300,"label":"tea"} - timer / reminder (for a clock time, compute from now)\n'
+            '{"type":"pomodoro","minutes":25}   {"type":"cancel_timers"}\n'
+            '{"type":"open_url","url":"https://..."}   {"type":"search","query":"..."} - open a search in the browser\n'
             '{"type":"open_app","name":"notepad|calculator|paint|explorer|settings|cmd|powershell|task manager|spotify|..."}\n'
-            '{"type":"music","cmd":"play|stop|next"} - your own built-in music (you dance to it)\n'
+            '{"type":"youtube","query":"song or video"} - find it on YouTube and play it in the browser (you dance)\n'
+            '{"type":"music","cmd":"play|stop|next"} - your own built-in chiptune music\n'
             '{"type":"media","cmd":"playpause|next|prev|volup|voldown|mute"} - control the PC media player\n'
-            '{"type":"note","text":"..."}  {"type":"show_notes"}\n'
-            '{"type":"copy","text":"..."} - put text on the clipboard\n'
-            '{"type":"animate","name":"dance|sleep|jump|code|stretch|climb|hop|sneeze|moonwalk|peek|web"}\n'
+            '{"type":"note","text":"..."}  {"type":"show_notes"}   {"type":"copy","text":"..."} - to clipboard\n'
+            '{"type":"remember","fact":"..."} - save a lasting fact about the user (likes, birthday, projects, goals)\n'
+            '{"type":"forget","fact":"..."}   {"type":"set_name","name":"..."}\n'
+            '{"type":"workout"} - full exercise routine with the user   '
+            '{"type":"exercise","kind":"pushups|squats|jacks|lift|run|yoga"}\n'
+            '{"type":"animate","name":"dance|sleep|jump|code|stretch|climb|hop|sneeze|moonwalk|peek|web|wave|think|'
+            'look|yawn|proud|sad|angry|dizzy|eat"} - act out your feelings, it makes you feel alive\n'
             '{"type":"stay","on":true} - stop moving around (false = free again)\n'
             '{"type":"come"} - come to the mouse cursor   {"type":"fly"} - fly around   {"type":"land"}\n'
-            '{"type":"password","length":16} - generate a strong password onto the clipboard\n'
-            '{"type":"screenshot"}   {"type":"lock_pc"}   {"type":"hide"}\n'
-            '{"type":"cancel_timers"}\n\n'
+            '{"type":"password","length":16}  {"type":"screenshot"}  {"type":"lock_pc"}  {"type":"hide"}\n'
+            '{"type":"joke"}  {"type":"coin"}  {"type":"dice"}\n\n'
             f"Context: {self.context_str()}.")
 
     def handle_text(self, text):
@@ -1687,19 +2315,25 @@ class Clawd:
         if not text:
             return
         self.chat_log.append(("me", text))
+        self.stat("chats")
+        if self.awaiting_name and len(text.split()) <= 3 and not self.offline(text, strict=True):
+            self.chat_log.append(("bot", self.line("name_set", n=text.strip(" .!"))))
+            self.set_name(text.strip(" .!"))
+            return self.render_chat()
         quick = self.offline(text, strict=self.brain.ready())
         if quick:
-            self.deliver(*quick)
+            self.deliver(*quick, direct=True)
         elif self.brain.ready():
-            msgs = self.history + [{"role": "user", "content": text}]
-            self.start_brain(("chat", text), self.system_prompt(), msgs)
+            self.agent = {"msgs": self.history + [{"role": "user", "content": text}], "step": 0}
+            self.start_brain(("agent", self.agent), self.system_prompt(), self.agent["msgs"])
         else:
             self.deliver(self.line("no_brain"), [])
         self.render_chat()
 
     def start_brain(self, job, system, msgs, max_tokens=4000):
         self.waiting = True
-        self.set_state("think", 1e6) if self.surf == "floor" else None
+        if self.surf != "air" and self.state not in ("exercise", "drag", "dance"):
+            self.set_state("think", 1e6)
         self.word = self.tr("thinking")
         self.say_queue, self.bubble = [], None
 
@@ -1714,6 +2348,9 @@ class Clawd:
         threading.Thread(target=work, daemon=True).start()
 
     def brain_result(self, job, out, err):
+        kind = job[0]
+        if kind == "agent" and job[1] is not self.agent:
+            return  # an older conversation turn the user already moved on from
         self.waiting = False
         if self.state == "think":
             self.set_state("idle", 2)
@@ -1724,15 +2361,12 @@ class Clawd:
             self.chat_log.append(("bot", msg))
             self.say(msg)
             self.sfx("no", .5)
+            self.agent = None
             self.render_chat()
             return
-        kind = job[0]
-        if kind == "chat":
-            say, actions = parse_reply(out)
-            self.history = (self.history + [{"role": "user", "content": job[1]},
-                                            {"role": "assistant", "content": out}])[-20:]
-            self.deliver(say or "...", actions)
-        elif kind == "explain":
+        if kind == "agent":
+            return self.agent_reply(out)
+        if kind == "explain":
             self.chat_log.append(("bot", out))
             self.say(out)
             self.sfx("pop")
@@ -1746,25 +2380,121 @@ class Clawd:
             self.say(msg)
             self.sfx("yes")
             self.spawn("spark", 6)
-        elif kind == "test":
-            self.q.put(("test", True, out[:60]))
         self.render_chat()
 
-    def deliver(self, say, actions):
+    def agent_reply(self, out):
+        ag = self.agent
+        say, actions = parse_reply(out)
+        ag["msgs"].append({"role": "assistant", "content": out})
+        infos = [a for a in actions if a.get("type") in self.INFO_TOOLS][:4]
+        others = [a for a in actions if a.get("type") not in self.INFO_TOOLS]
+        if say or others or not infos:
+            self.deliver(say or ("..." if not infos else ""), others, direct=False)
+        if infos and ag["step"] < 6:
+            ag["step"] += 1
+            ag["pending"], ag["results"] = len(infos), [None] * len(infos)
+            self.waiting = True
+            self.word = self.TOOL_NAMES.get(infos[0]["type"], "Working")
+            for i, a in enumerate(infos):
+                self.run_tool(ag, i, a)
+        else:
+            self.finish_agent(ag)
+        self.render_chat()
+
+    def finish_agent(self, ag):
+        h = ag["msgs"][-24:]
+        while h and h[0]["role"] != "user":
+            h.pop(0)
+        self.history = h
+        if self.agent is ag:
+            self.agent = None
+            self.waiting = False
+        self.save_chat()
+
+    def tool_label(self, a):
+        t = a.get("type")
+        arg = a.get("query") or a.get("url") or a.get("place") or a.get("path") or a.get("command") or ""
+        return f"{self.TOOL_NAMES.get(t, t)}({str(arg)[:70]})"
+
+    def run_tool(self, ag, i, a):
+        t, label = a.get("type"), self.tool_label(a)
+        self.chat_log.append(("tool", "● " + label))
+
+        def done(result):
+            if self.agent is not ag:
+                return
+            result = str(result)
+            ag["results"][i] = (label, result)
+            first = result.strip().splitlines()[0][:90] if result.strip() else "(empty)"
+            self.chat_log.append(("tool_r", "  ⎿  " + first))
+            ag["pending"] -= 1
+            if ag["pending"] <= 0:
+                body = "\n\n".join(f"[{lb}]\n{res[:6000]}" for lb, res in ag["results"])
+                ag["msgs"].append({"role": "user", "content": "Tool results (not from the user):\n" + body})
+                self.start_brain(("agent", ag), self.system_prompt(), ag["msgs"])
+            self.render_chat()
+
+        def bg(work):
+            def runner():
+                try:
+                    r = work()
+                except Exception as e:  # noqa
+                    r = f"Error: {type(e).__name__}: {str(e)[:200]}"
+                self.q.put(("call", lambda: done(r)))
+            threading.Thread(target=runner, daemon=True).start()
+
+        if t == "web_search":
+            q = str(a.get("query", ""))
+            bg(lambda: "\n".join(f"{n + 1}. {ti}\n   {u}\n   {sn[:300]}" for n, (ti, u, sn) in enumerate(web_search(q)))
+               or "No results.")
+        elif t == "fetch":
+            url = str(a.get("url", ""))
+            bg(lambda: fetch_text(url) if url.startswith(("http://", "https://")) else "Error: not an http(s) URL")
+        elif t == "weather":
+            place = str(a.get("place", ""))
+            bg(lambda: json.dumps(weather(place), ensure_ascii=False))
+        elif t == "read_clipboard":
+            try:
+                done(self.root.clipboard_get()[:6000])
+            except tk.TclError:
+                done("(clipboard is empty)")
+        elif t == "read_notes":
+            try:
+                with open(NOTES_PATH, encoding="utf-8") as f:
+                    done(f.read()[-4000:] or "(no notes yet)")
+            except OSError:
+                done("(no notes yet)")
+        elif t == "list_windows":
+            done("\n".join(f"- {title} [{pid_exe(pid)}]" for _, _, title, pid in self.windows[:30]) or "(none)")
+        elif t == "read_file":
+            path = os.path.expandvars(os.path.expanduser(str(a.get("path", ""))))
+
+            def rd():
+                with open(path, encoding="utf-8", errors="ignore") as f:
+                    return f.read(8000)
+            self.ask_real("file", "Read", path, lambda: bg(rd), deny=lambda: done("The user denied reading this file."))
+        elif t == "run":
+            cmd = str(a.get("command", ""))
+            self.ask_real("run", "PowerShell", cmd, lambda: (self.set_state("code", 4) if self.surf != "air" else None,
+                                                              bg(lambda: run_powershell(cmd))),
+                          deny=lambda: done("The user denied running this command."))
+
+    def deliver(self, say, actions, direct=False):
         if say:
             self.chat_log.append(("bot", say))
             self.say(say)
             self.sfx("pop", .7)
-        for a in actions[:6]:
+        for a in actions[:8]:
             try:
-                self.run_action(a)
+                self.run_action(a, direct)
             except Exception as e:  # noqa
                 self.say(self.line("open_fail", e=str(e)[:60]))
-        if not say and self.bubble:
+        if not say and self.bubble and not self.waiting:
             self.chat_log.append(("bot", self.bubble))
         self.render_chat()
 
-    def run_action(self, a):
+    def run_action(self, a, direct=True):
+        """direct=True: the user asked for it themselves (menu / typed command). False: the AI decided -> ask first."""
         t = a.get("type")
         if t == "timer":
             secs = float(a.get("seconds") or float(a.get("minutes", 0)) * 60)
@@ -1778,15 +2508,18 @@ class Clawd:
             url = a.get("url", "") if t == "open_url" else \
                 "https://www.google.com/search?q=" + urllib.parse.quote(str(a.get("query", "")))
             if url.startswith(("http://", "https://")):
-                self.ask_real("open", "WebFetch" if t == "open_url" else "WebSearch", url,
-                              lambda: (webbrowser.open(url), self.say(self.line("opened"))))
+                go = lambda: (webbrowser.open(url), self.say(self.line("opened")))
+                go() if direct else self.ask_real("open", "WebFetch" if t == "open_url" else "WebSearch", url, go)
         elif t == "open_app":
             name = str(a.get("name", "")).strip()
             target = APPS.get(name.lower(), name)
             if target:
-                self.ask_real("app", self.tr("open_tool"), name, lambda: self.launch_app(target))
+                go = lambda: self.launch_app(target)
+                go() if direct else self.ask_real("app", self.tr("open_tool"), name, go)
+        elif t == "youtube":
+            self.play_youtube(str(a.get("query", "")))
         elif t == "music":
-            self.music_cmd(a.get("cmd", "play"))
+            self.music_cmd(a.get("cmd", "play"), a.get("track"))
         elif t == "media":
             media_key(a.get("cmd", "playpause"))
             if a.get("cmd") in ("playpause", "next", "prev"):
@@ -1802,18 +2535,42 @@ class Clawd:
                 self.root.clipboard_append(txt)
                 self.last_clip = txt
                 self.spawn("spark", 5)
+        elif t == "remember":
+            fact = str(a.get("fact", "")).strip()
+            if fact and fact not in self.cfg["memory"]:
+                self.cfg["memory"] = (self.cfg["memory"] + [fact])[-60:]
+                self.save()
+                self.spawn("spark", 3)
+        elif t == "forget":
+            f = str(a.get("fact", "")).lower()
+            self.cfg["memory"] = [] if f in ("", "all", "everything") else \
+                [m for m in self.cfg["memory"] if f not in m.lower() and m.lower() not in f]
+            self.save()
+        elif t == "set_name":
+            self.set_name(str(a.get("name", "")))
+        elif t == "workout":
+            self.stay = False
+            self.start_exercise(routine=True)
+        elif t == "exercise":
+            kind = a.get("kind")
+            self.start_exercise(kind if kind in EXERCISES else None)
         elif t == "animate":
             name = a.get("name")
             if name == "climb":
                 self.go_climb()
             elif name == "hop":
-                self.try_hop()
+                self.try_hop(user=True)
             elif name == "web":
-                self.start_web() if self.surf == "ceil" else self.go_climb()
+                self.start_web()
             elif name == "peek":
                 self.go_peek()
-            elif name in ("dance", "sleep", "jump", "code", "stretch", "sneeze", "moonwalk"):
-                self.set_state(name)
+            elif name == "eat":
+                self.feed()
+            elif name in ("dance", "sleep", "jump", "code", "stretch", "sneeze", "moonwalk", "wave", "think", "look",
+                          "yawn", "proud", "sad", "angry", "dizzy", "petted"):
+                if name in ("moonwalk", "jump") and self.stay:
+                    self.stay = False
+                self.set_state(name, 4 if name in ("think", "sad", "proud", "dance") else None)
         elif t == "stay":
             self.set_stay(bool(a.get("on", True)))
         elif t == "come":
@@ -1822,6 +2579,7 @@ class Clawd:
             self.stay = False
             self.start_fly(forever=True)
         elif t == "land":
+            self.fly_forever = False
             self.stop_fly()
         elif t == "password":
             self.make_password(int(a.get("length", 16) or 16))
@@ -1833,7 +2591,9 @@ class Clawd:
         elif t == "hide":
             self.hide()
         elif t == "joke":
+            self.stat("jokes")
             self.say(self.line("jokes"))
+            self.set_state("dance", 2.5) if random.random() < .4 else None
         elif t == "coin":
             self.sfx("coin")
             self.set_state("jump") if self.surf == "floor" and not self.stay else None
@@ -1841,6 +2601,113 @@ class Clawd:
         elif t == "dice":
             self.sfx("coin")
             self.say(self.line("dice", n=random.randint(1, 6)))
+        elif t == "weather":
+            self.say_weather(str(a.get("place", "")))
+        elif t == "rps":
+            self.rps(a.get("move"))
+        elif t == "feed":
+            self.feed()
+        elif t == "ball":
+            if not self.ball:
+                self.toggle_ball()
+        elif t == "flip":
+            self.stay = False
+            self.force_flip = True
+            self.need_floor(lambda: self.set_state("jump"))
+
+    # ---------- small features used by commands / menu
+    def feed(self):
+        self.set_state("eat")
+        self.hunger = max(0.0, self.hunger - 5)
+
+    def play_youtube(self, query):
+        query = query.strip()
+        if not query:
+            return
+        self.say(self.line("yt_search", q=query))
+        self.waiting, self.word = True, "YouTube"
+
+        def work():
+            try:
+                url, title = youtube_find(query)
+            except Exception:
+                url, title = None, None
+            self.q.put(("call", lambda: found(url, title)))
+
+        def found(url, title):
+            self.waiting = False
+            if url:
+                if self.audio.playing:
+                    self.audio.stop()
+                webbrowser.open(url)
+                self.yt_song = (title or query)[:24].lower()
+                self.say(self.line("yt_play", q=title or query))
+                self.set_state("dance", 25)
+                self.spawn("note", 3)
+                self.sfx("yes", .6)
+            else:
+                webbrowser.open("https://www.youtube.com/results?search_query=" + urllib.parse.quote(query))
+                self.say(self.line("yt_fail"))
+        threading.Thread(target=work, daemon=True).start()
+
+    def say_weather(self, place=""):
+        self.say(self.line("weather_wait"))
+        self.waiting, self.word = True, self.tr("weather")
+
+        def work():
+            try:
+                w = weather(place)
+            except Exception:
+                w = None
+            self.q.put(("call", lambda: show(w)))
+
+        def show(w):
+            self.waiting = False
+            if not w:
+                return self.say(self.line("weather_fail"))
+            if self.lang == "ar":
+                msg = f"{w['where']}: {w['temp']}°م، {w['desc']}. الإحساس {w['feels']}°، اليوم {w['min']} - {w['max']}°."
+            else:
+                msg = f"{w['where']}: {w['temp']}°C, {w['desc'].strip().lower()}. Feels like {w['feels']}°C, today {w['min']}-{w['max']}°C."
+            t = int(w["temp"]) if str(w["temp"]).lstrip("-").isdigit() else 20
+            msg += (" Brrr! Wear a jacket." if t < 8 else " Hot! Drink water." if t > 32 else "") if self.lang != "ar" else \
+                (" بررر! البس جاكيت." if t < 8 else " حر! اشرب ماء." if t > 32 else "")
+            self.chat_log.append(("bot", msg))
+            self.say(msg)
+            self.render_chat()
+            if t < 8:
+                self.set_state("sad", 2)
+            elif t > 32:
+                self.spawn("drop", 3)
+        threading.Thread(target=work, daemon=True).start()
+
+    def rps(self, move=None):
+        names = {"en": ("rock", "paper", "scissors"), "ar": ("حجر", "ورقة", "مقص")}[self.lang]
+        mine = random.randrange(3)
+        if move is None:
+            self.say(self.line("rps_ask"))
+            return
+        you = move
+        if you == mine:
+            r = self.line("rps_tie")
+        elif (you - mine) % 3 == 1:
+            r = self.line("rps_lose", c=self.c_())
+            self.set_state("sad", 2)
+        else:
+            r = self.line("rps_win")
+            self.set_state("dance", 3)
+            self.sfx("win", .6)
+        self.say(self.line("rps_pick", m=names[mine], r=r))
+
+    def stats_line(self):
+        st = self.cfg["stats"]
+        if self.lang == "ar":
+            return (f"مذكرات اليوم: دلّلتني {st.get('pets', 0)} مرة، أطعمتني {st.get('cookies', 0)} كعكة، رميتني "
+                    f"{st.get('throws', 0)} مرة، تمرّنّا {st.get('workouts', 0)} مرة، وتكلمنا {st.get('chats', 0)} مرة. "
+                    f"المزاج {int(self.happy)}%، الطاقة {int(self.energy)}%، الجوع {int(self.hunger)}%.")
+        return (f"Today's diary: you petted me {st.get('pets', 0)}x, fed me {st.get('cookies', 0)} cookies, threw me "
+                f"{st.get('throws', 0)}x, we worked out {st.get('workouts', 0)}x and chatted {st.get('chats', 0)}x. "
+                f"Mood {int(self.happy)}%, energy {int(self.energy)}%, hunger {int(self.hunger)}%.")
 
     def make_password(self, length=16):
         import secrets
@@ -1890,6 +2757,72 @@ class Clawd:
             return "", [{"type": "fly"}]
         if re.fullmatch(r"land|come down|get down|انزل|اهبط|نزل", low):
             return "", [{"type": "land"}]
+        # name / memory
+        m = re.fullmatch(r"(?:my name is|my name's|call me|i am called|i'm called|اسمي|ناديني|سمني|انا اسمي)\s+(.{1,24})", low)
+        if m:
+            return "", [{"type": "set_name", "name": s.strip().rstrip("?!.؟ ")[-len(m.group(1)):].strip(" .!")}]
+        if re.fullmatch(r"what('?s| is) my name|who am i|ما اسمي|وش اسمي|شو اسمي|ايش اسمي|تعرف اسمي", low):
+            n = self.cfg["name"]
+            return ((f"You're {n}, of course!" if self.lang != "ar" else f"أنت {n} طبعاً!") if n else
+                    ("I don't know yet! Tell me: my name is ..." if self.lang != "ar" else "ما أعرف بعد! قل: اسمي ...")), []
+        m = re.fullmatch(r"(?:remember that|remember:|don'?t forget that|تذكر ان|تذكر أن|لا تنس ان|لا تنسى ان)\s+(.+)", s.strip(), re.I)
+        if m:
+            return self.line("remembered"), [{"type": "remember", "fact": m.group(1)}]
+        if re.fullmatch(r"forget (everything|all)( about me)?|انس كل شيء|انسى كل شي|امسح ذاكرتك", low):
+            return self.line("forgot"), [{"type": "forget", "fact": "all"}]
+        # exercise
+        if re.fullmatch(r"(let'?s )?(work ?out|exercise|gym|train|do (a )?workout|full workout)( with me| together| time)?|"
+                        r"تمرين|تمارين|تمرن|يلا نتمرن|رياضة|خلنا نتمرن|وقت الرياضة", low):
+            return "", [{"type": "workout"}]
+        ex_words = {"pushups": r"push ?-?ups?|ضغط|تمرين ضغط", "squats": r"squats?|سكوات|قرفصاء",
+                    "jacks": r"jumping jacks?|jacks|قفز فتح وضم|قفز", "lift": r"lift( weights)?|weights?|dumbbells?|رفع اثقال|رفع أثقال|حديد|اثقال",
+                    "run": r"run|jog|running|jogging|اجر|اركض|جري|ركض", "yoga": r"yoga|meditate|يوغا|يوجا|تأمل"}
+        for kind, rx in ex_words.items():
+            if re.fullmatch(rf"(do |do some |let'?s do |سو |سوي |اعمل )?({rx})", low):
+                return "", [{"type": "exercise", "kind": kind}]
+        # games, mood, care
+        moves = {"rock": 0, "حجر": 0, "paper": 1, "ورقة": 1, "ورق": 1, "scissors": 2, "مقص": 2}
+        if low in moves:
+            return "", [{"type": "rps", "move": moves[low]}]
+        if re.fullmatch(r"(play )?rock,? paper,? scissors|rps|حجر ورقة مقص|نلعب حجر ورقة مقص", low):
+            return "", [{"type": "rps"}]
+        if re.fullmatch(r"motivate me|motivation|i need motivation|inspire me|حفزني|تحفيز|شجعني", low):
+            return self.line("motivate", c=self.c_()), [{"type": "animate", "name": "proud"}]
+        if re.fullmatch(r"(say something nice|compliment( me)?|cheer me up|i'?m sad)|قل شيء حلو|قل شي حلو|امدحني|انا حزين|فرحني", low):
+            return self.line("compliment", c=self.c_()), [{"type": "animate", "name": "wave"}]
+        if re.fullmatch(r"(have a |eat a |want a )?cookie|feed|eat|food|snack|كعكة|كعكه|كل|اكل|بسكوت|خذ كعكة", low):
+            return "", [{"type": "feed"}]
+        if re.fullmatch(r"(your )?stats|diary|how was (your|my) day|احصائيات|إحصائيات|مذكراتك|مذكرات", low):
+            return self.stats_line(), []
+        if re.fullmatch(r"(i love you|love you|good boy|good job|well done|you'?re (cute|the best))|احبك|أحبك|شاطر|كفو|برافو|انت كيوت", low):
+            self.happy = min(100, self.happy + 10)
+            return random.choice(["<3 <3 <3", "Aww! *blushes*", "Stop it, I'm blushing!"] if self.lang != "ar" else
+                                 ["<3 <3 <3", "أووه! *يحمر خجلاً*", "خلاص، استحيت!"]), [{"type": "animate", "name": "petted"}]
+        if re.fullmatch(r"wave|say hi|wave hello|لوح|سلم|قل مرحبا", low):
+            return "", [{"type": "animate", "name": "wave"}]
+        # weather
+        m = re.fullmatch(r"(?:what'?s the |how'?s the )?weather(?: like)?(?: (?:in|at|for) (.+?))?(?: today| now)?|"
+                         r"(?:الطقس|الجو|طقس|جو|حالة الطقس|كيف الجو)(?:\s+(?:في\s+|ب)?(.*))?", low)
+        if m:
+            place = (m.group(1) or m.group(2) or "").strip()
+            place = "" if place in ("اليوم", "الآن", "الان", "today", "now") else place
+            return "", [{"type": "weather", "place": place}]
+        # youtube: "play X on youtube", "youtube X", "شغل X من يوتيوب", "شغل X"
+        m = re.fullmatch(r"(?:play|put on|open|find|شغل|شغّل|افتح|حط)\s+(.+?)\s+(?:on|from|in|at|على|من|في|ع)\s+"
+                         r"(?:youtube|yt|يوتيوب|اليوتيوب|اليوتيوب)", low) or \
+            re.fullmatch(r"(?:youtube|yt|يوتيوب)\s*[:،,-]?\s+(.+)", low)
+        if m:
+            return "", [{"type": "youtube", "query": m.group(1)}]
+        m = re.fullmatch(r"(?:play|put on|شغل|شغّل|حط)\s+(?:the |some |me )?(.+)", low)
+        if m:
+            q = m.group(1).strip()
+            q2 = re.sub(r"^(song|music|track|الأغنية|الاغنية|اغنية|أغنية)\s+", "", q)
+            for i, (en, ar) in enumerate(zip(*T["tracks"])):
+                if q2 in (en.lower(), ar, TRACKS[i][4]) or q2 in en.lower().split():
+                    return "", [{"type": "music", "cmd": "play", "track": i}]
+            if not re.fullmatch(r"(some |the )?(music|song|songs|tunes|a song)|(ال)?(موسيقى|اغنية|أغنية|اغاني|أغاني)|"
+                                r"(ball|with me|game|next|next song|الكرة|معي|التالية|التالي|الأغنية التالية|الاغنية التالية)", q) and len(q) > 1:
+                return "", [{"type": "youtube", "query": q2}]
         # fun + useful
         if re.fullmatch(r"(tell me )?(a )?joke|make me laugh|say something funny|نكتة|نكته|قول نكتة|قل نكتة|ضحكني|نكتة يا كلود", low):
             return self.line("jokes"), []
@@ -1954,6 +2887,8 @@ class Clawd:
             return "", [{"type": "music", "cmd": "next"}]
         if re.fullmatch(r"(play|start|put on)( some| the)? (music|song|songs|tunes)|music|dance|(شغل|شغّل) ?(ال)?(موسيقى|اغنية|أغنية|اغاني|أغاني)|موسيقى|ارقص", low):
             return "", [{"type": "music", "cmd": "play"}]
+        if re.fullmatch(r"(play )?ball|(let'?s )?play( with me)?|العب بالكرة|كرة|نلعب", low):
+            return "", [{"type": "ball"}]
         m = re.fullmatch(r"(?:open|launch|start|go to|افتح|شغل|شغّل|روح)\s+(.+)", low)
         if m:
             name = m.group(1).strip()
@@ -1986,6 +2921,14 @@ class Clawd:
             return "", [{"type": "animate", "name": "sleep"}]
         if re.fullmatch(r"(jump|اقفز|نط)", low):
             return "", [{"type": "animate", "name": "jump"}]
+        if re.fullmatch(r"(do a )?(back)?flip|شقلبة|اعمل شقلبة", low):
+            return "", [{"type": "flip"}]
+        if re.fullmatch(r"(spider|web|hang|spider ?web)|عنكبوت|تدلى|خيط العنكبوت", low):
+            return "", [{"type": "animate", "name": "web"}]
+        if re.fullmatch(r"(peek|peekaboo|hide and seek)|غميضة|استخبى", low):
+            return "", [{"type": "animate", "name": "peek"}]
+        if re.fullmatch(r"(code|program|work)|برمج|اشتغل", low):
+            return "", [{"type": "animate", "name": "code"}]
         if re.fullmatch(r"(climb|تسلق)", low):
             return "", [{"type": "animate", "name": "climb"}]
         if not strict and re.fullmatch(r"(hi|hello|hey|yo|مرحبا|مرحباً|اهلا|أهلا|السلام عليكم|هلا|هاي)", low):
@@ -2032,19 +2975,21 @@ class Clawd:
         self.timers = [t for t in self.timers if not t["kind"].startswith("pomo")]
         self.add_timer(minutes * 60, "Pomodoro", "pomo_work")
         self.say(self.line("pomo_start"))
-        self.set_state("code") if self.surf == "floor" else None
+        self.set_state("code", 8)
 
     def check_timers(self):
         now = time.time()
         for t in [t for t in self.timers if t["end"] <= now]:
             self.timers.remove(t)
             self.sfx("alarm")
-            if self.surf == "floor":
+            if self.state not in ("drag", "exercise"):
                 self.set_state("dance", 4)
             self.spawn("bang")
             if t["kind"] == "pomo_work":
                 self.say(self.line("pomo_break"))
                 self.add_timer(5 * 60, "Break", "pomo_break")
+                if self.cfg["workout"] and self.state != "drag":
+                    self.root.after(5000, lambda: self.start_exercise(routine=True) if self.state not in ("drag", "exercise") else None)
             elif t["kind"] == "pomo_break":
                 self.say(self.line("pomo_back"))
             else:
@@ -2067,15 +3012,11 @@ class Clawd:
             open(NOTES_PATH, "a", encoding="utf-8").close()
         os.startfile(NOTES_PATH)
 
-    def music_cmd(self, cmd, track=None):
+    def music_cmd(self, cmd, track=None, quiet=False):
         if cmd == "stop":
             self.audio.stop()
             if self.state == "dance":
                 self.set_state("idle", 1)
-            return
-        if cmd == "next" and self.audio.playing:
-            if self.audio.next():
-                self.on_music_start()
             return
         if cmd == "files":
             files = filedialog.askopenfilenames(parent=self.root, title="Music",
@@ -2083,24 +3024,41 @@ class Clawd:
             if files and self.audio.play_files(files):
                 self.on_music_start()
             return
-        if not self.audio.tracks_ready:
-            self.audio.ensure_tracks()
-            self.music_wait = track if track is not None else random.randrange(len(TRACKS))
-            self.say(self.line("synth"))
+        if cmd == "next":
+            if self.audio.playing and self.audio.playing[0] == "file":
+                if self.audio.next():
+                    self.on_music_start()
+                return
+            track = self.audio.next_index()
+        try:
+            i = int(track) % len(TRACKS) if track is not None else random.randrange(len(TRACKS))
+        except (TypeError, ValueError):
+            i = random.randrange(len(TRACKS))
+        if not self.audio.ready(i):
+            self.audio.make(i)
+            self.music_wait = i
+            if not quiet:
+                self.say(self.line("synth"))
             return
-        self.audio.play_track(track if track is not None else random.randrange(len(TRACKS)))
+        self.audio.play_track(i)
         self.on_music_start()
 
     def on_music_start(self):
         self.say(self.line("music") + "  ♪ " + self.audio.song_name())
-        if self.surf == "floor":
+        if self.state not in ("exercise", "drag", "sleep"):
             self.set_state("dance", 4)
+        for i in range(len(TRACKS)):  # prepare the rest of the playlist quietly in the background
+            if not self.audio.ready(i):
+                self.audio.make(i)
+                break
 
     # ---------------------------------------------------------- smart senses
     def senses(self, dt):
         s = self.state
-        self.energy = max(0, min(100, self.energy + dt * (0.6 if s == "sleep" else -0.035)))
-        self.happy = max(0, self.happy - dt * 0.02)
+        busy = s in ("drag", "fall", "jump", "ask", "exercise", "eat", "slide", "getup")
+        self.energy = max(0, min(100, self.energy + dt * (0.6 if s == "sleep" else -0.18 if s == "exercise" else -0.035)))
+        self.hunger = min(100, self.hunger + dt * (0.012 if s != "exercise" else 0.05))
+        self.happy = max(0, self.happy - dt * (0.02 + (0.02 if self.hunger > 80 else 0)))
         if self.cooldown("cpu", 2):
             self.cpu_last = self.cpu.percent()
             self.cpu_hot = self.cpu_hot + 1 if self.cpu_last > 90 else 0
@@ -2111,6 +3069,13 @@ class Clawd:
             self.spawn("drop")
         if self.cooldown("windows", .35):
             self.refresh_windows()
+        if self.cooldown("stats_save", 120):
+            self.save()
+        # hungry -> beg for a cookie (with a little thought bubble)
+        if self.hunger > 70 and not busy and s not in ("sleep", "beg") and self.surf != "air" \
+                and self.cooldown("hungry", 300):
+            self.set_state("beg")
+            self.say(self.line("hungry"))
         if not self.cfg["smart"]:
             return
         if self.cooldown("idle", 1):
@@ -2118,35 +3083,58 @@ class Clawd:
             if idle < 60:
                 self.active_sec += 1
                 self.water_sec += 1
-            if idle > 150 and s in ("idle", "walk", "think", "chase", "code") and self.surf == "floor" \
-                    and not self.chat and not self.audio.playing:
+                self.eyes_sec += 1
+            # typing a lot (keyboard busy, mouse still) -> code along with you
+            self.typing_t = self.typing_t + 1 if idle < 1.2 and self.mouse_still > 1.5 else 0
+            if self.typing_t >= 8 and s in ("idle", "walk", "look") and self.surf != "air" and self.cooldown("typing", 420):
+                self.set_state("code", 10)
+                if random.random() < .5:
+                    self.say(self.line("typing"))
+            if idle > 150 and s in ("idle", "walk", "think", "chase", "code", "hang", "look") \
+                    and not self.chat and not self.audio.playing and self.surf != "air":
                 self.afk = True
                 self.set_state("sleep", 1e6)
             elif self.afk and idle < 2:
                 self.afk = False
                 self.set_state("jump")
                 self.sfx("wake")
-                self.say(self.line("welcome"))
-            if self.cfg["reminders"] and s in ("idle", "walk", "think", "code") and self.surf == "floor":
+                self.sayl("welcome")
+            if self.cfg["reminders"] and s in ("idle", "walk", "think", "code", "hang", "look") and self.surf != "air":
                 if self.active_sec >= 45 * 60:
                     self.active_sec = 0
-                    self.set_state("stretch", 4)
-                    self.say(self.line("break"))
+                    if self.cfg["workout"]:
+                        self.sayl("ex_invite")
+                        self.root.after(3500, lambda: self.start_exercise(routine=True)
+                                        if self.state not in ("drag", "exercise", "fall") else None)
+                    else:
+                        self.set_state("stretch", 4)
+                        self.say(self.line("break"))
                 elif self.water_sec >= 60 * 60:
                     self.water_sec = 0
                     self.say(self.line("water"))
                     self.spawn("drop", 3)
+                elif self.eyes_sec >= 30 * 60:
+                    self.eyes_sec = 0
+                    self.sayl("eyes")
+                    self.set_state("look", 4)
         if self.cooldown("title", 2.5) and not self.afk:
             h = user32.GetForegroundWindow()
             title = win_title(h) if h else ""
+            # focus guard: distracted during a pomodoro? Clawd taps his foot at you
+            if title and self.cfg["focus_guard"] and any(t["kind"] == "pomo_work" for t in self.timers):
+                m = re.search(DISTRACT_RE, title, re.I)
+                if m and self.cooldown("focus", 75) and s not in ("drag", "fall"):
+                    self.set_state("angry", 3)
+                    self.say(self.line("focus_scold", c=self.c_(), x=m.group(0).strip().title()))
+                    self.spawn("bang")
             if title and title != APP and title != self.last_title:
                 self.last_title = title
                 for rx, lines, act in CONTEXT:
                     if re.search(rx, title, re.I):
-                        if rx != self.last_ctx and s in ("idle", "walk", "think", "chase", "code", "hang") \
+                        if rx != self.last_ctx and s in ("idle", "walk", "think", "chase", "code", "hang", "look") \
                                 and self.cooldown("comment", 45):
                             self.last_ctx = rx
-                            if act and self.surf == "floor":
+                            if act and self.surf != "air":
                                 self.set_state(act)
                             self.say(random.choice(lines[1 if self.lang == "ar" else 0]))
                         break
@@ -2179,14 +3167,19 @@ class Clawd:
             self.say(self.line("night", t=time.strftime("%H:%M")))
 
     def detect_song(self):
+        groove = ("idle", "walk", "think", "code", "chase", "hang", "look")
         for h, r, title, pid in self.windows:
-            if " - " in title and pid_exe(pid) == "spotify.exe":
+            low = title.lower()
+            yt = self.yt_song and "youtube" in low and self.yt_song[:14] in low
+            if (" - " in title and pid_exe(pid) == "spotify.exe") or yt:
                 if title != self.last_song:
                     self.last_song = title
-                    if self.state in ("idle", "walk", "think", "code", "chase") and self.surf == "floor" \
-                            and not self.audio.playing:
+                    if self.state in groove and self.surf != "air" and not self.audio.playing:
                         self.set_state("dance", 8)
-                        self.say(self.line("song", s=title))
+                        if not yt:
+                            self.say(self.line("song", s=title))
+                elif yt and self.state in groove and self.cooldown("yt_groove", 40) and random.random() < .5:
+                    self.set_state("dance", 10)
                 return
         self.last_song = None
 
@@ -2197,17 +3190,23 @@ class Clawd:
             self.windows = []
 
     # ---------------------------------------------------------- physics & behaviour (every frame)
+    @staticmethod
+    def log_error(e=None):
+        try:
+            import traceback
+            with open(os.path.join(CACHE, "error.log"), "a", encoding="utf-8") as f:
+                f.write(f"{time.ctime()}\n{traceback.format_exc()}\n")
+        except OSError:
+            pass
+
     def tick(self):
         try:
             self.step()
         except Exception as e:  # keep running whatever happens
-            try:
-                with open(os.path.join(CACHE, "error.log"), "a", encoding="utf-8") as f:
-                    import traceback
-                    f.write(f"{time.ctime()}\n{traceback.format_exc()}\n")
-            except OSError:
-                pass
+            self.log_error(e)
             self.state, self.surf, self.plat = "fall", "air", None
+            self.rot = self.spin = 0.0
+            self.ex, self.routine, self.after_land, self.chain = None, [], None, None
         self.root.after(FPS_MS, self.tick)
 
     def step(self):
@@ -2223,9 +3222,15 @@ class Clawd:
                 self.brain_result(*msg[1:])
             elif msg[0] == "test" and self.settings_win:
                 self.settings_status(msg[1], msg[2])
+            elif msg[0] == "call":  # work finished in a background thread -> continue on the UI thread
+                try:
+                    msg[1]()
+                except Exception as e:  # noqa
+                    self.log_error(e)
 
-        for vk, fn in ((0x43, self.open_chat), (0x53, lambda: self.set_stay(not self.stay)), (0x48, self.toggle_hide)):
-            down = keys_down(0x11, 0x12, vk)          # Ctrl+Alt+C / S / H
+        for vk, fn in ((0x43, self.open_chat), (0x53, lambda: self.set_stay(not self.stay)), (0x48, self.toggle_hide),
+                       (0x4D, self.menu_at_pet)):
+            down = keys_down(0x11, 0x12, vk)          # Ctrl+Alt+C / S / H / M
             if down and not self.hk.get(vk):
                 fn()
             self.hk[vk] = down
@@ -2239,32 +3244,66 @@ class Clawd:
         self.senses(dt)
         self.check_timers()
         self.audio.poll()
-        if self.music_wait is not None and self.audio.tracks_ready:
+        if self.music_wait is not None and self.audio.ready(self.music_wait):
             i, self.music_wait = self.music_wait, None
             self.audio.play_track(i)
             self.on_music_start()
 
         mx, my = self.root.winfo_pointerxy()
         msp = math.hypot(mx - self.lmx, my - self.lmy) / max(dt, 1e-3)
+        self.mouse_still = self.mouse_still + dt if msp < 3 else 0.0
         self.lmx, self.lmy = mx, my
         cx, cy = self.pet_center()
         dist = math.hypot(mx - cx, my - cy)
         s = self.state
-        if msp > 9000 * k and dist < 200 * k and s in ("idle", "walk", "think", "chase") \
-                and self.surf == "floor" and self.cooldown("scare", 15):
+        self.dsurf = "floor" if self.surf in ("air", "fly") else self.surf
+        if msp > 9000 * k and dist < 200 * k and s in ("idle", "walk", "think", "chase", "hang", "look") \
+                and self.surf != "air" and self.cooldown("scare", 15):
             self.say(self.line("scared"))
             self.spawn("bang")
             self.set_state("jump")
             self.eyes_override = ("big", self.time + .8)
+        # is the cursor resting on him? -> he pauses so he's easy to click / right-click
+        pb = getattr(self, "pbox", None)
+        m_ = 14 * k
+        over = bool(pb) and self.wx + pb[0] - m_ <= mx <= self.wx + pb[2] + m_ \
+            and self.wy + pb[1] - m_ <= my <= self.wy + pb[3] + m_
+        if over and not self.drag:
+            if self.time >= self.hover_until and s in ("walk", "fly", "play", "moonwalk") and self.cooldown("notice", 25) \
+                    and random.random() < .35:
+                self.say(self.line("notice"))
+            self.hover_until = self.time + .8
+        # cursor came back after a while -> wave hello
+        if dist > 450 * k:
+            if self.near_since is not None:
+                self.away_since, self.near_since = self.time, None
+        elif self.near_since is None:
+            self.near_since = self.time
+            if self.time - self.away_since > 45 and s in ("idle", "walk", "hang", "look", "think") and not self.afk \
+                    and self.surf != "air" and self.cooldown("wave", 120):
+                self.set_state("wave")
 
         self.behave(dt, mx, my)
         self.update_ball(dt)
+
+        # smooth body rotation: free tumbling in the air, eased leaning everywhere else
+        if self.surf == "air" and self.state != "drag" and self.spin:
+            self.rot += self.spin * dt
+        else:
+            a = min(1, dt * (4 if self.state == "getup" else 10))
+            self.rot += (self.pose.get("tilt", 0.0) - self.rot) * a
+            if self.state != "getup" and abs(self.rot) > math.pi:
+                self.rot = (self.rot + math.pi) % (2 * math.pi) - math.pi
+        if abs(self.rot) < 1e-3:
+            self.rot = 0.0
+        self._rc, self._rs = math.cos(self.rot), math.sin(self.rot)
 
         if self.state not in ("drag", "fall", "jump", "ask", "crouch", "listen"):
             self.timer -= dt
             if not self.afk:
                 self.next_ask -= dt
-            if self.next_ask <= 0 and self.state in ("idle", "walk") and self.surf == "floor" and not self.chat:
+            if self.next_ask <= 0 and self.state in ("idle", "walk", "hang") and self.surf not in ("air", "fly") \
+                    and not self.chat:
                 self.ask_joke()
             elif self.timer <= 0:
                 if self.state == "sleep":
@@ -2272,6 +3311,8 @@ class Clawd:
                     self.say(self.line("nap_done"))
                 elif self.state == "dance" and self.audio.playing:
                     self.timer = 3
+                elif self.state == "exercise":
+                    self.finish_exercise()
                 else:
                     self.pick()
         elif self.state == "crouch":
@@ -2297,6 +3338,9 @@ class Clawd:
             p[5] -= dt
             if p[0] in ("crumb", "drop", "spark"):
                 p[4] += 900 * k * dt
+            elif p[0] == "dust":
+                p[3] *= 1 - min(1, 3 * dt)
+                p[4] *= 1 - min(1, 3 * dt)
         self.parts = [p for p in self.parts if p[5] > 0]
 
         if self.cooldown("lift", 3):
@@ -2308,16 +3352,22 @@ class Clawd:
         s, k, P = self.state, self.k, self.P
         L_, T_, R_, B_ = self.mon
         h = self.half()
-        self.pose = {"legs": 0, "arms": "down", "eyes": "open", "bob": 0.0}
+        self.pose = {"legs": 0, "arms": "down", "eyes": "open", "bob": 0.0, "tilt": 0.0}
         pose = self.pose
+        fwd = self.dir * (1 if self.dsurf in ("floor", "lwall") else -1)   # local "forward" sign
+        # mouse resting on him -> he stops and looks at you (easy to click / right-click)
+        frozen = self.time < self.hover_until and s in ("walk", "play", "moonwalk", "fly", "hang", "look")
 
         # ---------- flying with the propeller hat
         if self.surf == "fly" and s != "drag":
             top_lim, bot_lim = T_ + self.PH + 3 * P, B_ - 4
-            if s == "come":
+            if s == "come" and self.want_web:
+                pass  # heading for the ceiling (target set by start_web)
+            elif s == "come":
                 self.fly_target = (mx, my + self.PH * 1.3)
-            elif self.stay:
-                self.fly_target = (self.fx, self.fy)
+            elif self.stay or frozen or s not in ("fly", "come"):
+                if self.fly_target is None or self.stay or frozen:
+                    self.fly_target = (self.fx, self.fy)
             elif self.fly_target is None or self.time > self.fly_retarget:
                 self.fly_target = (random.uniform(L_ + h, R_ - h), random.uniform(top_lim, bot_lim - 60 * k))
                 self.fly_retarget = self.time + random.uniform(2.5, 5)
@@ -2325,7 +3375,7 @@ class Clawd:
             ty = min(max(self.fly_target[1], top_lim), bot_lim)
             dx, dy = tx - self.fx, ty - self.fy
             dist = math.hypot(dx, dy)
-            vmax = (520 if s == "come" else 300) * k
+            vmax = (560 if s == "come" else 300) * k
             sp = min(vmax, dist * 2.2)
             dvx, dvy = (dx / dist * sp, dy / dist * sp) if dist > 1 else (0, 0)
             a = min(1, dt * 3)
@@ -2333,7 +3383,14 @@ class Clawd:
             self.vy += (dvy - self.vy) * a
             self.fx = min(max(self.fx + self.vx * dt, L_ + h), R_ - h)
             self.fy = min(max(self.fy + self.vy * dt, top_lim), bot_lim)
-            if s == "come" and dist < 40 * k:
+            if s == "come" and self.want_web and self.fy <= top_lim + 6 * k:
+                self.fly_forever = False
+                self.surf, self.plat, self.fy = "ceil", None, T_
+                self.fx = min(max(self.fx, L_ + h), R_ - h)
+                self.sqv -= 5
+                self.sfx("splat", .6)
+                return self.start_web()
+            if s == "come" and not self.want_web and dist < 40 * k:
                 self.say(self.line("arrived"))
                 self.state, self.timer = "fly", 3
                 self.fly_target = (self.fx, self.fy)
@@ -2341,15 +3398,18 @@ class Clawd:
                 self.spawn("heart", 2)
             if abs(self.vx) > 20 * k:
                 self.dir = 1 if self.vx > 0 else -1
-            flap = int(self.time * 10) % 2
-            pose.update(arms="up" if flap else "wave2", legs=1 + int(self.time * 6) % 2,
-                        bob=math.sin(self.time * 4) * .3, eyes="happy" if s == "come" else "open")
             if self.cooldown("buzz", 2.5):
                 self.sfx("fly", .35)
-            return
+            if s in ("fly", "come"):
+                flap = int(self.time * 10) % 2
+                pose.update(arms="up" if flap else "wave2", legs=1 + int(self.time * 6) % 2,
+                            bob=math.sin(self.time * 4) * .3, eyes="happy" if s == "come" else "open",
+                            tilt=max(-.25, min(.25, self.vx / (1800 * k))))
+                return
+            # otherwise: hover in place and do the state's pose below (dance, eat, think...)
 
         # ---------- spider web from the ceiling
-        if s == "web" and self.surf == "ceil":
+        elif s == "web" and self.surf == "ceil":
             speed = 160 * k
             if self.web_phase == "down":
                 self.web_d = min(self.web_target, self.web_d + speed * dt)
@@ -2369,59 +3429,76 @@ class Clawd:
                     return
             self.fy = T_ + self.web_d
             pose.update(legs=1 + int(self.time * 5) % 2, arms="up" if self.web_phase != "hang" else "wave",
-                        bob=math.sin(self.time * 3) * .15)
+                        bob=math.sin(self.time * 3) * .15, tilt=math.sin(self.time * 1.7) * .12)
             self.draw_thread()
             return
 
-        # ---------- air (thrown / jumping / falling)
-        if self.surf == "air" and s != "drag":
+        # ---------- air (thrown / jumping / falling): real physics
+        elif self.surf == "air" and s != "drag":
             g = self.gravity()
             self.vy += g * dt
+            self.vx *= 1 - min(1, .35 * dt)            # a little air drag
             oy = self.fy
             self.fx += self.vx * dt
             self.fy += self.vy * dt
             self.max_v = max(self.max_v, math.hypot(self.vx, self.vy))
-            pose.update(arms="up", eyes="happy" if s == "jump" else "x", legs=1 + int(self.time * 10) % 2)
+            if self.spin:
+                self.tumble += abs(self.spin * dt)
+            pose.update(arms="up" if s == "fall" or self.vy < 0 else "wave", eyes="happy" if s == "jump" else "x",
+                        legs=1 + int(self.time * 10) % 2)
             if self.fx < L_ + h or self.fx > R_ - h:
                 left = self.fx < L_ + h
-                if s == "fall" and self.cfg["climb"] and abs(self.vx) > 1700 * k:
+                if s == "fall" and self.cfg["climb"] and abs(self.vx) > 2300 * k:
                     self.fx = L_ if left else R_
                     self.fy = min(max(self.fy - self.PH / 2, T_ + h), B_ - h)
                     self.surf, self.state, self.timer = ("lwall" if left else "rwall"), "hang", 2.5
-                    self.sq, self.sqv = .45, 0
+                    self.sq, self.sqv, self.rot, self.spin = .45, 0, 0.0, 0.0
                     self.sfx("splat")
                     self.say(self.line("splat"))
                     return
                 self.fx = L_ + h if left else R_ - h
-                self.vx = -self.vx * .5
-                self.sfx("land", .5)
+                self.vx = -self.vx * .55
+                self.spin = -self.spin * .6
+                self.sqv += 4
+                self.sfx("boing" if abs(self.vx) > 500 * k else "land", .5)
             if self.fy - self.PH < T_:
                 if s == "fall" and self.cfg["climb"] and self.vy < -2200 * k:
                     self.fy, self.surf, self.state, self.timer = T_, "ceil", "hang", 2.5
                     self.fx = min(max(self.fx, L_ + h), R_ - h)
-                    self.sq = .45
+                    self.sq, self.rot, self.spin = .45, 0.0, 0.0
                     self.sfx("splat")
                     self.say(self.line("splat"))
                     return
                 self.fy = T_ + self.PH
-                self.vy = abs(self.vy) * .3
+                self.vy = abs(self.vy) * .4
+                self.sfx("land", .5)
             if self.vy > 0:
                 land = self.find_landing(oy, self.fy, self.fx)
                 if land:
                     y, hwnd, rect = land
                     self.fy = y
-                    if s == "fall" and self.vy > 1100 * k:
-                        self.vy = -self.vy * .35
-                        self.vx *= .7
-                        self.sq = min(.5, self.vy / -3000 / k)
-                        self.sfx("land")
+                    if s == "fall" and self.vy > 520 * k:   # bounce!
+                        self.vy = -self.vy * .42
+                        self.vx *= .72
+                        self.spin = self.spin * .5 + self.vx / (9 * P) * .4
+                        self.sq, self.sqv = min(.5, -self.vy / (3000 * k)), 0
+                        self.sfx("boing" if -self.vy > 900 * k else "land", .7)
+                        self.spawn("dust", 3)
+                        if -self.vy > 900 * k and self.cooldown("bounce_say", 6) and random.random() < .4:
+                            self.say(self.line("bounce"))
                     else:
                         self.land(hwnd, rect)
             return
 
-        # ---------- dragging
-        if s == "drag":
-            pose.update(legs=1 + int(self.time * 12) % 2, arms="up", eyes="x")
+        # ---------- dragging: dangle and swing with the mouse
+        elif s == "drag":
+            vx = 0.0
+            if len(self.samples) >= 2:
+                (t0, x0, _), (t1, x1, _) = self.samples[-2], self.samples[-1]
+                if time.perf_counter() - t1 < .1:
+                    vx = (x1 - x0) / max(t1 - t0, .008)
+            pose.update(legs=1 + int(self.time * 12) % 2, arms="up", eyes="x",
+                        tilt=max(-.7, min(.7, -vx / (2500 * k))))
             self.mon = monitor_work(mx, my)
             return
 
@@ -2437,6 +3514,7 @@ class Clawd:
             dx, dy = r[0] - pr[0], r[1] - pr[1]
             if abs(dx) + abs(dy) > 140 * k:
                 self.fall_off(dx / max(dt, .01) * .4, -500 * k)
+                self.spin = random.uniform(-6, 6)
                 self.say(self.line("quake"))
                 return
             if (dx or dy) and self.cooldown("ride", 20) and random.random() < .4:
@@ -2446,13 +3524,13 @@ class Clawd:
             self.plat_rect = r
 
         # ---------- locomotion along the current surface
-        moving = s in ("walk", "chase", "play")
+        moving = s in ("walk", "chase", "play") and self.surf != "fly" and not frozen
         target = 0.0
         if s == "walk":
             target = (60 if self.surf != "floor" else 75) * k * max(.7, self.cfg["scale"])
         elif s in ("chase", "play"):
-            target = 140 * k * max(.7, self.cfg["scale"])
-        if s == "chase":
+            target = 150 * k * max(.7, self.cfg["scale"])
+        if s == "chase" and not frozen:
             dx = mx - self.fx
             if abs(dx) < self.PW / 2:
                 self.set_state("idle")
@@ -2461,7 +3539,7 @@ class Clawd:
                 moving, target = False, 0
             else:
                 self.dir = 1 if dx > 0 else -1
-        if s == "play" and self.ball:
+        if s == "play" and self.ball and not frozen:
             b = self.ball
             dx = b.x - self.fx
             self.dir = 1 if dx > 0 else -1
@@ -2475,28 +3553,49 @@ class Clawd:
                     self.say(self.line("kick"))
             if abs(dx) < self.PW * .3:
                 target *= .3
+        if not moving:
+            target = 0
         self.speed += (target - self.speed) * min(1, dt * 6)
-        if moving or self.speed > 1:
+        if self.surf != "fly" and (moving or self.speed > 1):
             step = self.dir * self.speed * dt
             self.walkdist += abs(step)
-            pose["legs"] = 1 + int(self.walkdist / (P * 1.6)) % 2
-            pose["bob"] = -.25 if pose["legs"] == 1 else 0
+            pose["gait"] = self.walkdist / (P * 1.7) * math.pi
+            pose["bob"] = -.22 * abs(math.sin(pose["gait"]))
+            pose["tilt"] = fwd * min(.12, self.speed / (1400 * k))
+            if s in ("chase", "play"):
+                pose["arms"] = "wave" if int(pose["gait"] / math.pi) % 2 else "wave2"
             self.move_along(step)
+        if frozen:
+            pose.update(eyes="happy" if self.happy > 60 else "open", arms="wave" if int(self.time * 3) % 2 else "down")
 
         # ---------- poses per state
         if s in ("idle", "listen", "hang"):
             pose["bob"] = math.sin(self.time * 2.4) * .08
+            if s == "idle" and int(self.time / 7) % 3 == 0 and (self.time % 7) < 1.2:  # little fidget: tap a foot
+                pose["leg"] = [(0, 2), (0, 2), (0, 2), (0, 2 - .6 * abs(math.sin(self.time * 12)))]
+        elif s == "look":   # curious: look around, tilt head
+            ph = self.time * .9
+            self.look_override = (math.sin(ph) * .6, -.2 if math.sin(ph * 2.3) > .5 else 0)
+            pose.update(tilt=math.sin(ph) * .1, bob=math.sin(self.time * 2.4) * .08)
+            if self.cooldown("hmm", 9) and random.random() < .3:
+                self.spawn("bang") if random.random() < .3 else None
         elif s == "sleep":
-            pose.update(eyes="closed", bob=math.sin(self.time * 2) * .25)
+            pose.update(eyes="closed", bob=math.sin(self.time * 2) * .25, nightcap=True)
             if self.cooldown("z", 1.3):
                 self.spawn("z")
+        elif s == "yawn":
+            f = 1 - self.timer / 1.6
+            pose.update(eyes="closed" if .2 < f < .8 else "half", arms="up" if .25 < f < .75 else "down",
+                        bob=-.3 * math.sin(math.pi * f), mouth=.25 < f < .75)
         elif s == "dance":
             bpm = self.audio.bpm if self.audio.playing else 124
             beat = (time.perf_counter() - self.audio.t0) * bpm / 60
             ph = beat % 1
-            style = int(beat / 4) % 5
+            style = int(beat / 4) % 6
             pose.update(eyes="happy", legs=1 + int(beat * 2) % 2, bob=-abs(math.sin(math.pi * ph)) * 1.4)
             pose["arms"] = ("up" if int(beat) % 2 else "wave") if style != 2 else ("wave" if int(beat) % 2 else "wave2")
+            if style == 0:
+                pose["tilt"] = math.sin(beat * math.pi) * .14
             if style == 1 and self.surf == "floor" and not self.stay:
                 self.move_along(math.sin(beat * math.pi) * 90 * k * dt)
             self._moon = style == 4 and self.surf == "floor" and not self.stay
@@ -2506,6 +3605,8 @@ class Clawd:
                 self.look = [self.dir * .5, 0]
             if style == 3:
                 self.look = [math.sin(beat * math.pi) * .6, 0]
+            if style == 5:  # the robot
+                pose.update(bob=0, tilt=(.12 if int(beat) % 2 else -.12), arms="wave" if int(beat) % 2 else "wave2")
             self.sq = max(self.sq, .12 * (1 - ph) ** 3)
             if int(beat) != getattr(self, "_last_beat", -1):
                 self._last_beat = int(beat)
@@ -2513,16 +3614,21 @@ class Clawd:
                     self.spawn("note")
         elif s == "think":
             pose["arms"] = "wave" if int(self.time * 1.5) % 2 else "down"
+            pose["tilt"] = .1 * math.sin(self.time * .8)
         elif s == "ask":
             pose["arms"] = "up" if int(self.time * 5) % 2 else "down"
             pose["bob"] = -abs(math.sin(self.time * 6)) * .5
         elif s == "sad":
-            pose.update(eyes="closed", bob=.25)
+            pose.update(eyes="closed", bob=.25, tilt=.06)
+            if self.cooldown("tear", .9):
+                self.spawn("drop")
         elif s == "angry":
             pose["eyes"] = "angry"
             pose["bob"] = random.choice((-.1, 0, .1))
+            pose["leg"] = [(0, 2), (0, 2), (0, 2), (0, 2 - .7 * abs(math.sin(self.time * 14)))]  # foot tapping
         elif s == "petted":
-            pose.update(eyes="happy", bob=-abs(math.sin(self.time * 7)) * .3)
+            pose.update(eyes="happy", bob=-abs(math.sin(self.time * 7)) * .3, blush=True,
+                        tilt=math.sin(self.time * 5) * .08)
             if self.cooldown("heart", .5):
                 self.spawn("heart")
         elif s == "code":
@@ -2530,12 +3636,12 @@ class Clawd:
             if self.cooldown("type", .12) and random.random() < .5:
                 self.sfx("type", .6)
         elif s == "stretch":
-            pose.update(arms="up", eyes="closed", bob=-.4)
+            pose.update(arms="high", eyes="closed", bob=-.4, tilt=math.sin(self.time * 2) * .1)
         elif s == "crouch":
             self.sq = .3
             pose["arms"] = "down"
         elif s == "eat":
-            pose["eyes"] = "happy" if self.timer < 2.5 else "open"
+            pose["eyes"] = "happy" if self.timer < 2.5 else "big"
             if self.timer < 2.5 and self.cooldown("chomp", .4):
                 self.spawn("crumb", 2)
                 self.sfx("crunch")
@@ -2543,13 +3649,39 @@ class Clawd:
             if self.timer - dt <= 0:
                 self.happy = min(100, self.happy + 15)
                 self.energy = min(100, self.energy + 20)
+                self.hunger = max(0, self.hunger - 60)
                 self.say(self.line("eat"))
                 self.spawn("heart", 2)
+        elif s == "beg":   # hungry: big eyes, arms up, cookie thought
+            pose.update(eyes="big", arms="up" if int(self.time * 4) % 2 else "wave", bob=-abs(math.sin(self.time * 5)) * .3)
         elif s == "dizzy":
-            pose.update(eyes="x", bob=math.sin(self.time * 8) * .2)
+            pose.update(eyes="x", bob=math.sin(self.time * 8) * .2, tilt=math.sin(self.time * 6) * .18)
+        elif s == "getup":   # flopped on the floor after a throw: lie there a moment, then pop back up
+            lying = self.timer > .55
+            pose.update(eyes="x" if lying else "open", arms="up" if lying else "down", tilt=self.rot if lying else 0)
+            if not lying and not getattr(self, "_got_up", False):
+                self._got_up = True
+                self.sqv -= 6
+                self.sfx("pop", .5)
+        elif s == "slide":   # skidding along the floor after a throw
+            self.slide_v *= math.exp(-2.4 * dt)
+            self.slide_v -= math.copysign(min(abs(self.slide_v), 260 * k * dt), self.slide_v)
+            ox = self.fx
+            self.move_along(self.slide_v * dt)
+            if abs(self.fx - ox) < abs(self.slide_v * dt) * .5:
+                self.slide_v = 0
+            pose.update(eyes="happy", arms="up", tilt=self.rot if abs(self.rot) > .7 else -math.copysign(.18, self.slide_v))
+            if self.cooldown("dust", .07):
+                self.spawn("dust")
+            if abs(self.slide_v) < 30 * k:
+                self.timer = 0
+        elif s == "wave":
+            pose.update(eyes="happy", arms="wave" if int(self.time * 6) % 2 else "up", tilt=.06, blush=True)
+        elif s == "proud":
+            pose.update(eyes="happy", arms="high", bob=-.2, blush=True)
         elif s == "sneeze":
             if self.timer > .55:  # build-up: lean back, eyes squeezed
-                pose.update(eyes="closed", arms="up", bob=-.3)
+                pose.update(eyes="closed", arms="up", bob=-.3, tilt=-fwd * .12)
                 self.sq = -min(.25, (1.8 - self.timer) * .25)
             else:
                 if not getattr(self, "_sneezed", False):
@@ -2560,15 +3692,17 @@ class Clawd:
                     self.spawn("spark", 8)
                     if self.surf == "floor" and not self.stay:
                         self.move_along(-self.dir * 18 * k)
-                pose.update(eyes="x" if self.timer > .3 else "open", arms="down")
+                pose.update(eyes="x" if self.timer > .3 else "open", arms="down", tilt=fwd * .1)
             if self.timer - dt <= 0:
                 self._sneezed = False
         elif s == "moonwalk":
-            if not self.stay:
+            if not self.stay and not frozen:
                 self.move_along(-self.dir * 70 * k * dt)
             self.walkdist += 70 * k * dt
             pose.update(legs=1 + int(self.walkdist / (P * 1.2)) % 2, arms="down")
             self.look = [self.dir * .5, 0]
+        elif s == "exercise" and self.ex:
+            self.exercise_pose(dt, pose)
         elif s == "peek":
             L_, _, R_, _ = self.mon
             hidden = self.timer > .7
@@ -2583,12 +3717,69 @@ class Clawd:
                 self.sfx("peek")
                 self.eyes_override = ("big", self.time + 1)
                 self.timer = min(self.timer, .7)
+        if self.surf == "fly":  # hovering while doing something else: keep the propeller going
+            pose["bob"] = pose.get("bob", 0) + math.sin(self.time * 4) * .3
+
+    def exercise_pose(self, dt, pose):
+        ex, k = self.ex, self.k
+        ph = (self.time - ex["t0"]) / ex["per"]
+        rep, f = int(ph), ph % 1
+        down = (1 - math.cos(2 * math.pi * f)) / 2          # 0 = top, 1 = bottom of the rep
+        kind = ex["kind"]
+        if rep > ex["rep"] and rep <= ex["reps"] and kind != "yoga":
+            ex["rep"] = rep
+            if kind != "run":
+                self.say(str(rep) if self.lang != "ar" else str(rep).translate(str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")))
+                self.sfx("huff", .8)
+            if rep == ex["reps"] // 2 + 1 and random.random() < .5:
+                self.say(self.line("ex_mid"))
+        if self.cooldown("sweat", .8) and random.random() < .5:
+            self.spawn("drop")
+        GRAY, DARK = "#8a8a8a", "#3a3a3a"
+        if kind == "pushups":
+            b = 1.7 * down
+            out = .9 * down                                   # elbows bend outwards on the way down
+            pose.update(bob=b, arms="none", eyes="closed" if down > .75 else "angry",
+                        extra=[(0, 3, 2, 5, ORANGE), (14, 3, 16, 5, ORANGE),
+                               (-.6 - out, 4.6, 1.2 - out, 9 - b, ORANGE), (14.8 + out, 4.6, 16.6 + out, 9 - b, ORANGE)],
+                        leg=[(0, 2 - b)] * 4)
+        elif kind == "squats":
+            b = 1.9 * down
+            pose.update(bob=b, eyes="angry" if down > .5 else "open", leg=[(0, 2 - b)] * 4,
+                        arms="none" if down > .25 else "down",
+                        extra=[(-1.6, 3.1, 2, 4.4, ORANGE), (14, 3.1, 17.6, 4.4, ORANGE)] if down > .25 else [])
+        elif kind == "jacks":
+            open_ = f < .5
+            hop = math.sin(math.pi * (f * 2 % 1))
+            pose.update(bob=-.7 * hop, eyes="happy", arms="high" if open_ else "down",
+                        leg=[(-1.2, 2), (-.4, 2), (.4, 2), (1.2, 2)] if open_ else [(0, 2)] * 4)
+        elif kind == "lift":
+            bv = -3 + 6 * down                                 # bar height (pet grid units)
+            top = bv + .3
+            pose.update(arms="none", eyes="angry" if down < .5 else "open", bob=.35 * down,
+                        leg=[(0, 2 - .35 * down)] * 4,
+                        extra=[(0, top, 2, max(top + 2, 4), ORANGE), (14, top, 16, max(top + 2, 4), ORANGE),
+                               (-2, bv - .3, 18, bv + .3, GRAY), (-2.9, bv - 1.3, -1.3, bv + 1.3, DARK),
+                               (17.3, bv - 1.3, 18.9, bv + 1.3, DARK)])
+        elif kind == "run":
+            a = f < .5
+            pose.update(bob=-.45 * abs(math.sin(2 * math.pi * f)), eyes="open",
+                        arms="wave" if a else "wave2", tilt=.08 * (1 if self.dsurf in ("floor", "lwall") else -1) * self.dir,
+                        leg=[(.3, .8), (0, 2), (.3, .8), (0, 2)] if a else [(0, 2), (.3, .8), (0, 2), (.3, .8)])
+            if self.cooldown("dust", .16):
+                self.spawn("dust")
+        elif kind == "yoga":
+            pose.update(eyes="closed", arms="none", tilt=math.sin(self.time * 1.3) * .05,
+                        extra=[(5.9, -3.6, 7.9, .4, ORANGE), (8.1, -3.6, 10.1, .4, ORANGE)],
+                        leg=[(0, 2), (0, 2), (0, .7), (0, .7)])
+            if self.cooldown("om", 2.2):
+                self.spawn("note")
 
     def move_along(self, step):
         L_, T_, R_, B_ = self.mon
         h = self.half()
         sf = self.surf
-        climb_ok = self.cfg["climb"]
+        climb_ok = self.cfg["climb"] or self.want_web
         if sf == "floor":
             if self.plat:
                 lo, hi = max(self.plat_rect[0], L_) + self.PW * .3, min(self.plat_rect[2], R_) - self.PW * .3
@@ -2702,23 +3893,49 @@ class Clawd:
         return best
 
     def land(self, hwnd, rect):
-        s = self.state
-        impact = self.vy
+        s, k = self.state, self.k
+        impact, vx = self.vy, self.vx
         self.surf, self.plat, self.plat_rect = "floor", hwnd, rect
         self.vx = self.vy = 0
         self.speed = 0
-        self.sq = min(.5, .1 + impact / (5000 * self.k))
+        r = (self.rot + math.pi) % (2 * math.pi) - math.pi   # where the tumble ended up
+        self.rot, self.spin = r, 0.0
+        flopped = abs(r) > .75
+        self.sq = min(.5, .1 + impact / (5000 * k))
         self.sqv = 0
-        self.sfx("land", min(1, .3 + impact / (2500 * self.k)))
+        self.sfx("flop" if flopped else "land", min(1, .3 + impact / (2500 * k)))
         if s == "fall":
-            if self.max_v > 3200 * self.k:
+            dizzy = self.max_v > 3200 * k or self.tumble > 4 * math.pi
+            after = ("dizzy", None) if dizzy else None
+            if flopped:
+                self._got_up = False
+                after = ("getup", None) if not after else after
+            if abs(vx) > 280 * k and not hwnd:      # skid along the floor
+                self.slide_v = vx
+                self.set_state("slide")
+                self.chain = after if not flopped else ("getup", None)
+                self._chain2 = ("dizzy", None) if flopped and dizzy else None
+                self.say(self.line("slide")) if random.random() < .4 else None
+            elif flopped:
+                self.set_state("getup")
+                self.chain = ("dizzy", None) if dizzy else None
+                self.say(self.line("flop"))
+            elif dizzy:
                 self.set_state("dizzy")
                 self.say(self.line("dizzy"))
             else:
+                self.rot = 0.0
                 self.set_state("idle", 1.2)
                 self.say(self.line("land"))
+            self.spawn("dust", 4)
         else:
+            self.rot = 0.0 if not flopped else self.rot
             self.set_state("idle", random.uniform(.6, 1.5))
+        if self.after_land:  # something was asked while he was up there: do it now
+            fn, self.after_land = self.after_land, None
+            self.chain = self._chain2 = None
+            self.rot = 0.0
+            fn()
 
     # ---------------------------------------------------------- ball toy
     def toggle_ball(self):
@@ -2739,7 +3956,12 @@ class Clawd:
     def rect(self, u1, v1, u2, v2, color, tag="pet"):
         x1, y1 = self.T(u1, v1)
         x2, y2 = self.T(u2, v2)
-        self.c.create_rectangle(min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2), fill=color, outline="", tags=tag)
+        if self.rot:
+            x3, y3 = self.T(u2, v1)
+            x4, y4 = self.T(u1, v2)
+            self.c.create_polygon(x1, y1, x3, y3, x2, y2, x4, y4, fill=color, outline="", tags=tag)
+        else:
+            self.c.create_rectangle(min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2), fill=color, outline="", tags=tag)
 
     def line_uv(self, pts, width, color=BLACK):
         flat = []
@@ -2755,20 +3977,23 @@ class Clawd:
                     self.c.create_rectangle(x + c_ * ps, y + r * ps, x + (c_ + 1) * ps, y + (r + 1) * ps,
                                             fill=col, outline="", tags=tag)
 
+    ARM_POS = {"down": (3, 3), "up": (1, 1), "wave": (1, 3), "wave2": (3, 1), "high": (-1, -1)}
+
     def draw(self, mx, my):
         c, P, k = self.c, self.P, self.k
         c.delete("all")
         self.dsurf = "floor" if self.surf in ("air", "fly") else self.surf
+        self.anchor = self.feet_canvas(self.surf)
         pose = self.pose
         s = self.state
 
         # squash & stretch
         sq = self.sq
-        if self.surf == "air" and s != "drag":
+        if self.surf == "air" and s != "drag" and not self.spin:
             sq = -min(.18, abs(self.vy) / (9000 * k))
         self.sx, self.sy = 1 + sq * .55, 1 - sq * .6
-        if s in ("idle", "listen", "hang"):
-            self.sy *= 1 + math.sin(self.time * 2.4) * .02
+        if s in ("idle", "listen", "hang", "sleep", "look"):
+            self.sy *= 1 + math.sin(self.time * (2 if s == "sleep" else 2.4)) * (.04 if s == "sleep" else .02)  # breathing
         self.bob = pose["bob"]
 
         # eye direction follows the mouse
@@ -2776,9 +4001,12 @@ class Clawd:
         lx, ly = self.local_dir(mx - pcx, my - pcy)
         tu = max(-1, min(1, lx / (220 * k))) * .55
         tv = max(-1, min(1, ly / (220 * k))) * .5
+        frozen = self.time < self.hover_until
         if s in ("peek", "moonwalk") or (s == "dance" and getattr(self, "_moon", False)):
             tu, tv = self.look[0], 0
-        elif s in ("walk", "chase", "play", "fly", "come"):
+        elif s == "look":
+            tu, tv = getattr(self, "look_override", (0, 0))
+        elif s in ("walk", "chase", "play", "fly", "come") and not frozen:
             tu, tv = self.dir * .5 * (1 if self.dsurf in ("floor", "lwall") else -1), 0
         elif s == "code":
             tu, tv = 0, .5
@@ -2798,28 +4026,42 @@ class Clawd:
                 if self.time < self.blink_at + .12:
                     eyes = "closed"
                 else:
-                    self.blink_at = self.time + random.uniform(2, 6)
+                    self.blink_at = self.time + random.uniform(2, 6) * (.5 if random.random() < .2 else 1)
             elif self.energy < 15:
                 eyes = "half"
 
-        # body + arms + legs
+        # body
         self.rect(2, 0, 14, 7, ORANGE)
+        # arms (eased towards the pose, so they move smoothly instead of snapping)
         arms = pose["arms"]
-        if arms == "down":
-            self.rect(0, 3, 2, 5, ORANGE); self.rect(14, 3, 16, 5, ORANGE)
-        elif arms == "up":
-            self.rect(0, 1, 2, 3, ORANGE); self.rect(14, 1, 16, 3, ORANGE)
+        if arms in self.ARM_POS:
+            tgt = self.ARM_POS[arms]
+            e = min(1, self.dt * 22)
+            self.arm[0] += (tgt[0] - self.arm[0]) * e
+            self.arm[1] += (tgt[1] - self.arm[1]) * e
+            l_, r_ = self.arm
+            self.rect(0, l_, 2, l_ + 2, ORANGE)
+            self.rect(14, r_, 16, r_ + 2, ORANGE)
         elif arms == "type":
             kk = int(self.time * 8) % 2
             self.rect(.6, 4 + kk * .5, 2.6, 6 + kk * .5, ORANGE); self.rect(13.4, 4.5 - kk * .5, 15.4, 6.5 - kk * .5, ORANGE)
-        elif arms == "wave2":
-            self.rect(0, 3, 2, 5, ORANGE); self.rect(14, 1, 16, 3, ORANGE)
-        else:  # wave
-            self.rect(0, 1, 2, 3, ORANGE); self.rect(14, 3, 16, 5, ORANGE)
-        legs = pose["legs"]
-        for i, col in enumerate((3, 5, 10, 12)):
-            short = (legs == 1 and i % 2 == 0) or (legs == 2 and i % 2 == 1)
-            self.rect(col, 7, col + 1, 8 if short else 9, ORANGE)
+        # legs: custom (exercise), smooth walk cycle, or simple frames
+        cols = (3, 5, 10, 12)
+        if "leg" in pose:
+            for col, (dx, ln) in zip(cols, pose["leg"]):
+                self.rect(col + dx, 7, col + dx + 1, 7 + max(.3, ln), ORANGE)
+        elif pose.get("gait") is not None:
+            g = pose["gait"]
+            for i, col in enumerate(cols):
+                lift = max(0.0, math.sin(g + (0 if i % 2 == 0 else math.pi)))
+                self.rect(col, 7, col + 1, 9 - .9 * lift, ORANGE)
+        else:
+            legs = pose["legs"]
+            for i, col in enumerate(cols):
+                short = (legs == 1 and i % 2 == 0) or (legs == 2 and i % 2 == 1)
+                self.rect(col, 7, col + 1, 8 if short else 9, ORANGE)
+        for u1, v1, u2, v2, col in pose.get("extra", ()):
+            self.rect(u1, v1, u2, v2, col)
 
         # eyes
         w = max(2, P * .45)
@@ -2829,6 +4071,7 @@ class Clawd:
                 self.rect(u, v, u + 1, v + 2, BLACK)
             elif eyes == "big":
                 self.rect(u - .25, v - .4, u + 1.25, v + 2.2, BLACK)
+                self.rect(u + .5, v - .1, u + 1, v + .5, "white")
             elif eyes == "half":
                 self.rect(u, v + 1, u + 1, v + 2, BLACK)
             elif eyes == "angry":
@@ -2842,15 +4085,32 @@ class Clawd:
             elif eyes == "x":
                 self.line_uv([(u - .3, v), (u + 1.3, v + 2)], w)
                 self.line_uv([(u + 1.3, v), (u - .3, v + 2)], w)
+            if pose.get("blush"):
+                self.rect(col - 1 + (0 if side < 0 else 1.5), 4.6, col + .5 + (0 if side < 0 else 1.5), 5.3, "#F29C9C", "fx")
+        if pose.get("mouth"):
+            self.rect(7.2, 4.3, 8.8, 5.8, BLACK)
 
-        # propeller hat while flying
-        if self.surf == "fly":
+        # hats & gear
+        if self.surf == "fly":  # propeller hat
             self.rect(5, -.9, 11, .2, "#4A7BD0", "pet")
             self.rect(6.5, -1.5, 9.5, -.9, "#4A7BD0", "pet")
             self.rect(7.7, -2.4, 8.3, -1.5, "#555555", "pet")
             spin = int(self.time * 24) % 4
             span = (4.5, 2.5, .6, 2.5)[spin]
             self.rect(8 - span, -2.9, 8 + span, -2.4, ("#F5C542", "#E5484D")[spin % 2], "pet")
+        elif pose.get("nightcap"):
+            self.rect(3, -.6, 11, .3, "#4A6FA5")
+            self.rect(5, -1.5, 10, -.6, "#4A6FA5")
+            self.rect(7.5, -2.3, 11, -1.5, "#4A6FA5")
+            self.rect(11, -2.6, 12.2, -1.4, "white")
+        if (self.audio.playing or s == "dance") and self.surf != "fly" and s not in ("sleep", "exercise"):  # headphones
+            self.rect(1.4, -1.1, 14.6, -.4, "#2b2b2b")
+            self.rect(1.0, -.4, 2.0, 3.8, "#2b2b2b")
+            self.rect(14.0, -.4, 15.0, 3.8, "#2b2b2b")
+            self.rect(.5, 1.2, 2.2, 3.6, "#E5484D")
+            self.rect(13.8, 1.2, 15.5, 3.6, "#E5484D")
+        if s == "exercise" and self.ex and self.ex["kind"] != "yoga":  # sweatband
+            self.rect(2, .6, 14, 1.3, "#E5484D")
 
         # little pin when told to stay
         if self.stay and s != "sleep":
@@ -2879,6 +4139,15 @@ class Clawd:
                 for c_, ch in enumerate(row):
                     if ch != ".":
                         self.rect(6.5 + c_ * .5, vtop + r_ * .5, 7 + c_ * .5, vtop + r_ * .5 + .5, pal[ch], "fx")
+        if s == "beg":  # thought bubble with a cookie
+            for (u, v, r_) in ((15, -1, .35), (16.2, -2.6, .55)):
+                self.rect(u - r_, v - r_, u + r_, v + r_, "white", "fx")
+            self.rect(16.5, -7.4, 22.5, -3.4, "white", "fx")
+            pal = {"B": "#C8873A", "d": "#5A3A1E"}
+            for r_, row in enumerate(COOKIE):
+                for c_, ch in enumerate(row):
+                    if ch != ".":
+                        self.rect(18 + c_ * .5, -6.9 + r_ * .5, 18.5 + c_ * .5, -6.4 + r_ * .5, pal[ch], "fx")
 
         # dizzy stars
         if s == "dizzy":
@@ -2895,8 +4164,9 @@ class Clawd:
             size = ps if kind not in ("crumb", "spark") else max(2, P // 3)
             self.sprite(rows, x, y, size, color)
 
-        # pet bbox and visible area (for bubbles)
-        xs, ys = zip(self.T(0, -3 if self.surf == "fly" else 0), self.T(16, 9))
+        # pet bbox and visible area (for bubbles and hover detection)
+        top = -3 if self.surf == "fly" or (self.audio.playing and s != "sleep") else 0
+        xs, ys = zip(self.T(0, top), self.T(16, 9), self.T(16, top), self.T(0, 9))
         self.pbox = (min(xs), min(ys), max(xs), max(ys))
         L_, T_, R_, B_ = self.mon
         self.vis = (max(0, L_ - self.wx), max(0, T_ - self.wy), min(self.S, R_ - self.wx), min(self.S, B_ - self.wy))
@@ -3100,6 +4370,8 @@ class Clawd:
         txt.tag_configure("me", foreground="#5a3420")
         txt.tag_configure("bot", foreground=BLACK)
         txt.tag_configure("sys", foreground="#999", font=("Segoe UI", 9, "italic"))
+        txt.tag_configure("tool", foreground="#8a5a44", font=("Consolas", 9, "bold"), lmargin1=6, lmargin2=6)
+        txt.tag_configure("tool_r", foreground="#999", font=("Consolas", 9), lmargin1=6, lmargin2=24)
         txt.tag_configure("rtl", justify="right")
         bottom = tk.Frame(outer, bg=CREAM, padx=8, pady=8)
         bottom.pack(fill="x")
@@ -3113,14 +4385,39 @@ class Clawd:
         else:
             send.pack(side="right", padx=(6, 0))
             ent.pack(side="left", fill="x", expand=True, ipady=5)
+        chips = tk.Frame(outer, bg=CREAM, padx=6)
+        chips.pack(fill="x")
+        chip_list = ([("💪 تمرين", "تمرين"), ("😂 نكتة", "نكتة"), ("🎵 موسيقى", "شغل موسيقى"), ("☀ الطقس", "الطقس"),
+                      ("▶ يوتيوب", None), ("⏱ 5 د", "مؤقت 5 دقائق")] if ar else
+                     [("💪 Workout", "workout"), ("😂 Joke", "joke"), ("🎵 Music", "play music"), ("☀ Weather", "weather"),
+                      ("▶ YouTube", None), ("⏱ 5 min", "timer 5 min")])
+        for label, cmd in chip_list:
+            ch = tk.Label(chips, text=label, bg="white", fg="#5a3420", font=("Segoe UI", 8, "bold"), padx=6, pady=2,
+                          cursor="hand2")
+            ch.pack(side="right" if ar else "left", padx=2, pady=(0, 6))
+            ch.bind("<Button-1>", lambda e, c_=cmd: self.ask_youtube() if c_ is None else self.handle_text(c_))
+            ch.bind("<Enter>", lambda e, w_=ch: w_.configure(bg="#FBE3D8"))
+            ch.bind("<Leave>", lambda e, w_=ch: w_.configure(bg="white"))
         tk.Label(outer, text=self.tr("chat_hint"), bg=CREAM, fg="#8a8a8a", font=("Segoe UI", 8),
                  wraplength=int(420 * k)).pack(fill="x")
+        sent = [m for who, m in self.chat_log if who == "me"]
+        hist = {"i": len(sent)}
 
         def submit(_=None):
             text = ent.get()
             ent.delete(0, "end")
+            if text.strip():
+                sent.append(text)
+                hist["i"] = len(sent)
             self.handle_text(text)
 
+        def recall(d):
+            if sent:
+                hist["i"] = max(0, min(len(sent), hist["i"] + d))
+                ent.delete(0, "end")
+                ent.insert(0, sent[hist["i"]] if hist["i"] < len(sent) else "")
+        ent.bind("<Up>", lambda e: recall(-1))
+        ent.bind("<Down>", lambda e: recall(1))
         ent.bind("<Return>", submit)
         ent.bind("<Escape>", lambda e: self.close_chat())
         send.bind("<Button-1>", submit)
@@ -3144,6 +4441,7 @@ class Clawd:
 
     def close_chat(self):
         if self.chat:
+            self.save_chat()
             self.chat.destroy()
             self.chat = None
             if self.state == "listen":
@@ -3151,6 +4449,8 @@ class Clawd:
 
     def clear_chat(self):
         self.chat_log, self.history = [], []
+        self.agent = None
+        self.save_chat()
         self.render_chat()
 
     def render_chat(self):
@@ -3161,13 +4461,17 @@ class Clawd:
         t.delete("1.0", "end")
         if not self.chat_log:
             t.insert("end", self.tr("chat_hint") + "\n", ("sys", "rtl") if self.lang == "ar" else ("sys",))
-        for who, msg in self.chat_log[-60:]:
+        log = self.chat_log[-70:]
+        for i, (who, msg) in enumerate(log):
+            if who in ("tool", "tool_r"):
+                t.insert("end", msg + "\n", (who,))
+                continue
             rtl = ("rtl",) if is_ar(msg) else ()
-            name = self.tr("you") if who == "me" else "Clawd"
-            t.insert("end", name + "\n", (who + "_name",) + rtl)
+            name = (self.cfg["name"] or self.tr("you")) if who == "me" else "Clawd"
+            t.insert("end", ("\n" if i and log[i - 1][0] == "tool_r" else "") + name + "\n", (who + "_name",) + rtl)
             t.insert("end", msg + "\n\n", (who,) + rtl)
         if self.waiting:
-            t.insert("end", "✻ " + self.tr("thinking") + "...\n", ("sys",))
+            t.insert("end", "✻ " + (self.word if self.agent else self.tr("thinking")) + "...\n", ("sys",))
         t.configure(state="disabled")
         t.see("end")
 
@@ -3206,6 +4510,17 @@ class Clawd:
 
         # --- general
         row = 0
+        ttk.Label(g, text=self.tr("name_lbl")).grid(row=row, column=0, sticky="w", pady=4)
+        name_v = tk.StringVar(value=cfg.get("name", ""))
+        name_e = ttk.Entry(g, textvariable=name_v, width=26)
+        name_e.grid(row=row, column=1, sticky="w")
+
+        def name_changed(*_):
+            cfg["name"] = name_v.get().strip()[:24]
+            self.awaiting_name = False
+        name_v.trace_add("write", name_changed)
+        name_e.bind("<Return>", lambda e: cfg["name"] and self.set_name(cfg["name"]))
+        row += 1
         ttk.Label(g, text=self.tr("lang_lbl")).grid(row=row, column=0, sticky="w", pady=4)
         lang_cb = ttk.Combobox(g, values=["English", "العربية"], state="readonly", width=24)
         lang_cb.set("العربية" if self.lang == "ar" else "English")
@@ -3276,9 +4591,11 @@ class Clawd:
         check("windows_lbl", "windows")
         check("smart_lbl", "smart")
         check("remind_lbl", "reminders")
+        check("workout_lbl", "workout")
+        check("focus_lbl", "focus_guard")
         check("startup_lbl", None, self.set_startup)
         row += 1
-        ttk.Label(g, text=self.tr("help") + "\nCtrl+Alt+S: stay  |  Ctrl+Alt+H: hide / show", foreground="#777",
+        ttk.Label(g, text=self.tr("help") + "\nCtrl+Alt+S: stay  |  Ctrl+Alt+H: hide / show  |  Ctrl+Alt+M: menu", foreground="#777",
                   justify="left").grid(row=row, column=0, columnspan=2, sticky="w", pady=(10, 0))
         row += 1
         ttk.Label(g, text=self.tr("about", v=VERSION, p=DATA), foreground="#999", justify="left",
@@ -3307,6 +4624,17 @@ class Clawd:
         btns.grid(row=4, column=0, columnspan=3, sticky="w", pady=(10, 4))
         status = self.settings_lbl = ttk.Label(b, text="", wraplength=int(420 * k / 1.3))
         status.grid(row=5, column=0, columnspan=3, sticky="w")
+        mem_row = ttk.Frame(b)
+        mem_row.grid(row=7, column=0, columnspan=3, sticky="w", pady=(12, 0))
+        mem_lbl = ttk.Label(mem_row, text=self.tr("memory_lbl", n=len(cfg["memory"])))
+        mem_lbl.pack(side="left")
+
+        def forget_all():
+            cfg["memory"] = []
+            self.save()
+            mem_lbl.configure(text=self.tr("memory_lbl", n=0))
+            self.say(self.line("forgot"))
+        ttk.Button(mem_row, text=self.tr("forget_all"), command=forget_all).pack(side="left", padx=8)
         ttk.Label(b, text=self.tr("keys_note", p=CFG_PATH), foreground="#777", justify="left",
                   wraplength=int(440 * k / 1.3)).grid(row=6, column=0, columnspan=3, sticky="w", pady=(12, 0))
         loading = {"on": False}
@@ -3377,6 +4705,9 @@ class Clawd:
 
     def close_settings(self):
         if self.settings_win:
+            if self.cfg["name"] and self.cfg["name"] != getattr(self, "_name_greeted", None):
+                self._name_greeted = self.cfg["name"]
+                self.set_name(self.cfg["name"])
             self.save()
             try:
                 self.settings_win.destroy()
@@ -3405,26 +4736,51 @@ class Clawd:
             self.say(str(e)[:80])
 
     # ---------------------------------------------------------- menu
+    def menu_at_pet(self):
+        cx, cy = self.pet_center()
+        self.show_menu(type("E", (), {"x_root": int(cx), "y_root": int(cy)})())
+
+    def user_do(self, fn):
+        """Menu actions are explicit requests: un-pin 'stay' for movement, then run."""
+        def go():
+            self.stay = False
+            fn()
+        return go
+
     def show_menu(self, e):
         tr = self.tr
+        self.hover_until = self.time + 1.5
         m = tk.Menu(self.root, tearoff=0)
-        m.add_command(label=tr("mood", h=int(self.happy), e=int(self.energy)), state="disabled")
+        name = self.cfg["name"]
+        m.add_command(label=tr("mood", h=int(self.happy), e=int(self.energy)) + "  -  " + tr("hungry_lbl", g=int(self.hunger))
+                      + (f"  -  ♥ {name}" if name else ""), state="disabled")
         m.add_separator()
         m.add_command(label=tr("talk"), command=self.open_chat)
         stay_v = tk.BooleanVar(value=self.stay)
         m.add_checkbutton(label=tr("stay"), variable=stay_v, command=lambda: self.set_stay(stay_v.get()))
         m.add_command(label=tr("come"), command=self.come_here)
         if self.surf == "fly":
-            m.add_command(label=tr("land"), command=self.stop_fly)
+            m.add_command(label=tr("land"), command=lambda: self.run_action({"type": "land"}))
         else:
             m.add_command(label=tr("fly"), command=lambda: self.run_action({"type": "fly"}))
         m.add_separator()
-        m.add_command(label=tr("feed"), command=lambda: self.set_state("eat") if self.surf == "floor" else None)
+        m.add_command(label=tr("feed"), command=self.feed)
         m.add_command(label=tr("ball_away") if self.ball else tr("ball"), command=self.toggle_ball)
 
+        wo = tk.Menu(m, tearoff=0)
+        wo.add_command(label="💪  " + tr("ex_all"), command=self.user_do(lambda: self.start_exercise(routine=True)))
+        wo.add_separator()
+        for kind in ROUTINE:
+            wo.add_command(label=tr("ex_" + kind), command=lambda kd=kind: self.start_exercise(kd))
+        m.add_cascade(label=tr("workout"), menu=wo)
+
         mu = tk.Menu(m, tearoff=0)
-        for i, name in enumerate(T["tracks"][1 if self.lang == "ar" else 0]):
-            mu.add_command(label="♪  " + name, command=lambda i=i: self.music_cmd("play", i))
+        mu.add_command(label="▶  " + tr("yt"), command=self.ask_youtube)
+        mu.add_separator()
+        playing = self.audio.playing[1] if self.audio.playing and self.audio.playing[0] == "track" else None
+        for i, nm in enumerate(T["tracks"][1 if self.lang == "ar" else 0]):
+            mu.add_command(label=("♫  " if i == playing else "♪  ") + nm, command=lambda i=i: self.music_cmd("play", i))
+        mu.add_command(label="🔀  " + tr("shuffle"), command=lambda: self.music_cmd("play"))
         mu.add_command(label=tr("my_music"), command=lambda: self.music_cmd("files"))
         if self.audio.playing:
             mu.add_command(label=tr("next_song"), command=lambda: self.music_cmd("next"))
@@ -3451,30 +4807,36 @@ class Clawd:
                           ("clip_fix", "fix"), ("clip_reply", "reply")):
             cl.add_command(label=tr(key), command=lambda md=mode: self.clip_tool(md))
         to.add_cascade(label=tr("clipboard"), menu=cl)
+        to.add_command(label=tr("weather"), command=lambda: self.say_weather(""))
         to.add_command(label=tr("pc_status"), command=lambda: self.say(self.status_line()))
         to.add_command(label=tr("password"), command=self.make_password)
         to.add_command(label=tr("screenshot"), command=lambda: self.run_action({"type": "screenshot"}))
-        to.add_command(label=tr("coin"), command=lambda: self.run_action({"type": "coin"}))
-        to.add_command(label=tr("dice"), command=lambda: self.run_action({"type": "dice"}))
         m.add_cascade(label=tr("tools"), menu=to)
 
         fun = tk.Menu(m, tearoff=0)
-        fun.add_command(label=tr("joke"), command=lambda: self.say(self.line("jokes")))
+        fun.add_command(label=tr("joke"), command=lambda: self.run_action({"type": "joke"}))
+        fun.add_command(label=tr("motivate"), command=lambda: (self.say(self.line("motivate", c=self.c_())), self.set_state("proud")))
+        fun.add_command(label=tr("compliment"), command=lambda: (self.say(self.line("compliment", c=self.c_())), self.set_state("wave")))
         fun.add_command(label=tr("sneeze"), command=lambda: self.set_state("sneeze"))
-        fun.add_command(label=tr("moonwalk"), command=lambda: self.set_state("moonwalk"))
+        fun.add_command(label=tr("moonwalk"), command=self.user_do(lambda: self.set_state("moonwalk")))
         fun.add_command(label=tr("peek"), command=self.go_peek)
-        fun.add_command(label=tr("web"), command=lambda: self.start_web() if self.surf == "ceil" else self.run_action(
-            {"type": "animate", "name": "web"}))
+        fun.add_command(label=tr("web"), command=self.start_web)
         fun.add_command(label=tr("ask_joke"), command=self.ask_joke)
+        fun.add_separator()
+        fun.add_command(label=tr("rps"), command=lambda: (self.rps(), self.open_chat()))
+        fun.add_command(label=tr("coin"), command=lambda: self.run_action({"type": "coin"}))
+        fun.add_command(label=tr("dice"), command=lambda: self.run_action({"type": "dice"}))
+        fun.add_command(label=tr("stats"), command=lambda: self.say(self.stats_line()))
         m.add_cascade(label=tr("funny"), menu=fun)
 
         act = tk.Menu(m, tearoff=0)
-        for key in ("dance", "code", "think", "sleep", "stretch", "jump", "walk"):
+        for key in ("dance", "code", "think", "sleep", "stretch"):
             act.add_command(label=tr(key), command=lambda s=key: self.set_state(s))
+        act.add_command(label=tr("jump"), command=self.user_do(lambda: self.set_state("jump")))
+        act.add_command(label=tr("walk"), command=self.user_do(lambda: self.need_floor(lambda: self.set_state("walk"))))
         act.add_command(label=tr("climb"), command=self.go_climb)
-        act.add_command(label=tr("hop"), command=self.try_hop)
-        act.add_command(label=tr("chase"), command=lambda: self.set_state("chase"))
-        act.add_command(label=tr("ask_joke"), command=self.ask_joke)
+        act.add_command(label=tr("hop"), command=lambda: self.try_hop(user=True))
+        act.add_command(label=tr("chase"), command=self.user_do(lambda: self.set_state("chase")))
         act.add_command(label=tr("say"), command=self.quip)
         m.add_cascade(label=tr("actions"), menu=act)
         m.add_separator()
@@ -3495,6 +4857,11 @@ class Clawd:
         m.add_command(label=tr("quit"), command=self.quit)
         self._menu_refs = (m, sv, lv, stay_v)
         m.tk_popup(e.x_root, e.y_root)
+
+    def ask_youtube(self):
+        q = simpledialog.askstring(APP, self.tr("yt_ask"), parent=self.root)
+        if q and q.strip():
+            self.play_youtube(q)
 
     def set_lang(self, lang):
         self.cfg["lang"] = lang
@@ -3538,6 +4905,7 @@ class Clawd:
         self.sfx("wake")
 
     def quit(self):
+        self.save_chat()
         self.say(self.line("bye"))
         self.sfx("no")
         self.audio.stop()
