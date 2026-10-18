@@ -1,0 +1,9 @@
+__pycache__/
+build/
+dist/
+release/
+Clawd Data/
+*.spec.bak
+*.log
+build.log
+Clawd.spec

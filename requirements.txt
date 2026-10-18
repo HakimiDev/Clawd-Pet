@@ -1,0 +1,3 @@
+pygame>=2.5        # sound + music (optional, falls back to winsound)
+anthropic>=0.40    # optional: Claude brain via the official SDK (falls back to plain HTTP)
+pyinstaller>=6.0   # only for building Clawd.exe
